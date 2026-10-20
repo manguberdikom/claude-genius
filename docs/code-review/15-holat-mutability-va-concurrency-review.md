@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 15. Holat, mutability va concurrency review (State and Concurrency)
 
@@ -313,7 +313,8 @@ public void sendReceipt(OrderId id) {
 // Yechim 1: CompletableFuture qaytarish va xatoni ishlash.
 @Async("orderExecutor")
 public CompletableFuture<Void> sendReceipt(OrderId id) {
-    return CompletableFuture.runAsync(() -> mailer.send(id));
+    mailer.send(id);
+    return CompletableFuture.completedFuture(null);   // xato future ichida qaytadi
 }
 
 // Yechim 2: global ishlovchi (void metodlar uchun yagona yo'l).

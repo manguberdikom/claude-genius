@@ -1,11 +1,9 @@
 ---
 name: architect-review
-description: Review a design or diagnose runtime behaviour in a Java/Spring system - module boundaries, coupling and cohesion, complexity, failure modes, napkin-math capacity estimates, JVM internals and GC, concurrency and virtual threads, profiling, Spring container/Boot/MVC/WebFlux/Data/transaction/Security mechanics, caching, Kafka, observability, container deployment, timeouts, schema migration, legacy refactoring, incidents and ADRs. Use when asked whether a design is right, where to put a boundary, why something is slow or leaking, how many threads or how much heap to give, what happens inside Spring, or to write an ADR or post-mortem.
+description: Review a design or diagnose runtime behaviour in a Java/Spring system - module boundaries, coupling and cohesion, complexity, failure modes, napkin-math capacity estimates, JVM internals and GC, concurrency and virtual threads, profiling, Spring container/Boot/MVC/WebFlux/Data/transaction/Security mechanics, caching, Kafka, observability, container deployment, timeouts, schema migration, legacy refactoring, optimization plan for an existing project ("optimizatsiya rejasi"), incidents and ADRs. Use when asked whether a design is right, where to put a boundary, why something is slow or leaking, how many threads or how much heap to give, what happens inside Spring, or to write an ADR or post-mortem.
 ---
 
 # Arxitektor ko'rigi
-
-41 bob, 517 bo'lim. To'liq hujjat: `docs/architect/README.md`.
 
 ## Qoida
 
@@ -14,24 +12,20 @@ bilimdan qanday qaror chiqadi**. Ko'rik berganda ikkinchisini tashlab
 ketmang - mexanikani aytib, qarorni aytmaslik yarim javob.
 
 Qaror tavsiya qilganda:
-1. Muammoni va kontekstni aniqlang (`architect 2`: o'lchanadigan talab,
-   hajm va o'sish taxmini).
-2. Ikkita-uchta variantni taqqoslang, har birining narxi bilan.
-3. Raqam bilan tekshiring - napkin math (`architect 8`: Little qonuni,
-   pool kattaligi). "Tezroq bo'ladi" o'lchovsiz gap.
+1. Muammoni va kontekstni aniqlang: o'lchanadigan talab, hajm va o'sish
+   taxmini (`architect 2.3`, `2.6`).
+2. Ikkita-uchta variantni taqqoslang, har birining narxi bilan (`architect 3.2`).
+3. Raqam bilan tekshiring - napkin math: Little qonuni, pool kattaligi
+   (`architect 8.3`, `8.4`). "Tezroq bo'ladi" o'lchovsiz gap.
 4. Nosozlik rejimini ayting: bu nima buzilganda qanday o'ladi
-   (`architect 7`: nosozlik turlari, ssenariylar jadvali).
-5. Qaror muhim bo'lsa, ADR yozing (`architect 3`: ADR tuzilishi).
+   (`architect 7.10`).
+5. Qaror muhim bo'lsa, ADR yozing (`architect 3.1`).
 
 `/manguberdi` shu sessiyada chaqirilgan bo'lsa dizayn qarori
 `rejalashtiruvchi` ga, kod o'zgarishi `dasturchi` ga beriladi; bu skill
 o'shanda faqat bob jadvali.
 
 ## Mavzu - bob jadvali
-
-Fayl ustuni bob qayerdaligini ko'rsatadi. Bob butunligicha o'qilmaydi
-(~8k token): avval `tools/doc.sh outline architect <bob>`, keyin kerakli
-bo'lim `tools/doc.sh show architect <bob.bo'lim>` bilan (~700 token).
 
 ### I. Fikrlash va qarorlar
 | Mavzu | Fayl |
@@ -94,16 +88,11 @@ Test strategiyasi: `spring-testing` skilli.
 Bob jadvali mavzuni topadi, bu asboblar esa ish oldidan faktni beradi:
 
 ```bash
-python3 tools/rules_for.py --vazifa="<vazifa>" <fayl>...   # retsept, umumiy qoidalar, boblar
+python3 tools/rules_for.py --vazifa="<vazifa>" <fayl>...   # retsept, umumiy qoidalar, boblar; fayl bo'lmasa chaqirilmaydi
+python3 tools/metod_bormi.py <src> --audit   # eski kod: takror, uzun metod, setter, tashqi yozuvchi
 python3 tools/schema_from_entities.py <src> # baza tuzilishi, ulanmasdan
 tools/doc.sh find -f "<so'rov>"             # matn ichidan qidirish
 tools/doc.sh outline architect <bob>        # bobdagi bo'limlar
 tools/doc.sh show architect <bob.bo'lim>    # faqat o'sha bo'lim
 tools/doc.sh checklist architect <bob>      # tekshiruv punktlari
 ```
-
-Konteyner ko'tarish (`docker run/build/pull/start`, `docker compose up`)
-va bazaga ulanish `tools/guard.py` tomonidan foydalanuvchi qaroriga
-qo'yiladi (`ask`): jadval va ustunni entity sinflari, sababni esa
-chiqish aytadi. Avval shularni sinang; kerak bo'lsa nega yetmaganini
-aytib so'rang.

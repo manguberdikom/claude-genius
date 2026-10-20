@@ -22,11 +22,10 @@ ProblemDetail handle(ImportException e) {
 
 Allaqachon bor, yozmang:
 - O'z `InvalidXxxException` sinfi o'rniga `IllegalArgumentException` yoki `IllegalStateException`, kontekst xabarda (clean-code 18.11)
-- Qo'lda `finally { close(); }` o'rniga `try-with-resources` (clean-code 19.4)
 - Qo'lda `if (x == null) throw` o'rniga `Objects.requireNonNull(x, "x")` (clean-code 19.9)
-- O'z xato JSON formati o'rniga `@RestControllerAdvice` va `ProblemDetail` (clean-code 27.3)
 
 Tuzoqlar:
 - `throw new X(e.getMessage())` asl stack trace ni yo'qotadi; `e` ni har doim cause qilib uzating (clean-code 19.1)
 - `catch` ichida ham log, ham throw bitta xatoni log da bir necha marta chiqaradi; log faqat xatoni qayta ishlagan chegarada (clean-code 19.7)
 - `InterruptedException` ni yutish uzilish belgisini o'chiradi va shutdown ishlamaydi; `Thread.currentThread().interrupt()` bilan tiklang (clean-code 19.5)
+- `detail` ga `e.getMessage()`, SQL, sinf nomi yozilmaydi: doimiy matn, texnik detal logda `traceId` bilan (clean-code 19.10, architect 17.8)

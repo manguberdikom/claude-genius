@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 41. Lombok, record va generatsiya qilingan kod (Lombok, Records and Generated Code)
 
@@ -183,7 +183,7 @@ public class Order {
 }
 ```
 
-Tuzatilgan variantda generatsiyani faqat xavfsiz qismga cheklaymiz va tenglikni biznes kaliti ustiga qo'yamiz. Biznes kalit faqat o'zgarmas bo'lsa tenglikka yaraydi: unga setter yaratilmaydi, ustun `updatable = false`, qiymat konstruktorda beriladi.
+Tuzatilgan variantda generatsiyani faqat xavfsiz qismga cheklaymiz va tenglikni biznes kaliti ustiga qo'yamiz. Biznes kalit faqat o'zgarmas bo'lsa tenglikka yaraydi: unga setter yaratilmaydi, ustun `updatable = false`, qiymat konstruktorda beriladi. Bunday kalit yo'q entity da standart yo'l id bo'yicha `equals` va sinfdan olingan barqaror `hashCode` ([entitet gigiyenasi](../clean-code/28-jpa-va-sql-kodining-tozaligi.md#281-entitet-gigiyenasi-equals-hashcode-tostring)).
 
 ```java
 @Entity

@@ -24,6 +24,6 @@ Allaqachon bor, yozmang:
 - Har metodda qo'lda metrika yoki log o'rniga `@Observed` yoki `ObservationRegistry` (patterns 8.4)
 
 Tuzoqlar:
-- Biznes qoidasi (status tekshiruvi, setter) servisda yozilsa model anemik bo'lib qoida takrorlanadi; qoidani entity metodiga oling, servis faqat yuklab chaqirsin (patterns 8.23, patterns 8.5)
+- Entity ichiga repository yoki servis inject qilinmaydi: kerakli ma'lumot metod parametri (patterns 8.23)
 - Repository metodini shunchaki qayta chaqiruvchi pass-through servis qiymat qo'shmaydi; use-case bo'lmasa qatlam ochmang (patterns 8.4)
 - Bir servis boshqa aggregate ni to'g'ridan-to'g'ri o'zgartirsa yoki servislar tsiklik bog'lansa chegara noto'g'ri; boshqa aggregate faqat o'z servisi yoki hodisa orqali (patterns 8.24)

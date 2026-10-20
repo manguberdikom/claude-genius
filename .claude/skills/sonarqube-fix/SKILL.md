@@ -5,7 +5,6 @@ description: Fix a SonarQube finding or pass a quality gate in a Java/Spring/Pos
 
 # SonarQube: issue tuzatish va gate'dan o'tish
 
-43 bob, 564 bo'lim. To'liq hujjat: `docs/sonarqube/README.md`.
 Atamalar: `docs/sonarqube/43-tezkor-malumotnoma-parametrlar-buyruqlar.md#4314-glossariy`.
 
 ## Qoida
@@ -29,9 +28,6 @@ Sonar issue'si - bug hisoboti, uni yopish usuli emas. Tartib:
 skill o'shanda faqat bob jadvali.
 
 ## Vazifa - bob jadvali
-
-Jadval bobni topadi, fayl butunligicha o'qilmaydi: `rule` yoki `outline`,
-keyin `show` (Asboblar).
 
 | Vazifa | Bob fayli |
 |---|---|
@@ -77,32 +73,18 @@ Issue toifasiga qarab:
 
 ```bash
 python3 tools/rules_for.py --vazifa="<vazifa>" <fayl>...  # Java tuzatishdan OLDIN majburiy: retsept, boblar, punktlar
-tools/doc.sh rule java:S3776          # shu kalit tilga olingan bo'limlar
+tools/doc.sh rule java:S3776          # birinchi 'qoida' qatori: tuzatish turgan bo'lim
 tools/doc.sh outline sonarqube <bob>  # bobdagi bo'limlar ro'yxati
 tools/doc.sh show sonarqube <raqam>   # faqat o'sha bo'lim, butun bob emas
-python3 tools/check_code.py <fayl>    # S108, S2221, S106, S1148, S2111, S2925, S1128, S1068, S1144, S1135, S1488, S1845, S6213, S8696; testda S8694, S8692, S5778, S5838, S3415, S5853, S1612
+python3 tools/check_code.py <fayl>    # mexanik Sonar kalitlari: grep -oE 'java:S[0-9]+' tools/check_code.py | sort -u
 tools/doc.sh checklist sonarqube <bob>
 python3 tools/sonar_fetch.py issues|gate|coverage|hotspots --loyiha <key>  # serverdan faqat o'qish
+python3 tools/run_tests.py --diff --coverage --yurgiz   # coverage faqat shu bilan o'lchanadi
+python3 tools/sonar_local.py tahlil   # tuzatishdan keyin gate: 0 OK, 1 topilma, 2 sozlama; konteynerni birinchi yaratish foydalanuvchi roziligi bilan
 ```
 
-## Sonar vazifasi kelganda tartib
+## Server vazifasi
 
-Gate shartlari va asbob sozlamasi: `tools/doc.sh show sonarqube 36.12`.
-
-1. Token fayli bormi (`GENIUS_SONAR_TOKEN_FILE`, sukut `~/.sonar-token.txt`).
-   Token qiymatini hech qayerga yozmang va chiqishda ko'rsatmang.
-2. `sonar_fetch.py gate`: qaysi shart yiqildi.
-3. `sonar_fetch.py issues`: `kalit` bo'yicha guruhlang, eng ko'pidan
-   boshlang. Coverage yetmasa `coverage` fayl bo'yicha qoplanmagan qatorni beradi.
-4. Guruhlarni fayl bo'yicha kesishmaydigan to'plamlarga bo'ling, parallel
-   aktyorlar bir faylga tegmasin.
-5. Hotspot ni `SAFE` deb belgilash va issue ni Accept yoki won't fix qilish
-   tashqi amal: faqat foydalanuvchi roziligi bilan, asbob buni qilmaydi.
-
-`doc.sh rule` kalit tilga olingan bo'limlarni ko'zga tashlanish bo'yicha
-beradi. Ba'zi katalog boblari (masalan 25 va 27) kalitni faqat bob
-kirishidagi jadvalda nomlaydi, tuzatish turgan bo'limda emas. Ro'yxatda
-raqamsiz katalog bobi chiqsa (bali past bo'lsa ham qisqa ro'yxatda doim
-turadi, masalan `sonarqube 25`), butun bobni `show`
-qilmang: `tools/doc.sh outline sonarqube 25` dan jadval qatoriga mos
-bo'limni tanlab, o'shani `show` bilan oching.
+`tools/doc.sh show sonarqube 36.12` (gate, kalit bo'yicha guruh, fayl
+kesishmasligi). Token qiymati chiqishga yozilmaydi; SAFE, Accept, won't
+fix faqat foydalanuvchi roziligi bilan.

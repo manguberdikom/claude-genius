@@ -31,9 +31,6 @@ Ikkalasini bitta chaqiruv beradi: `python3 tools/handoff.py --memory`. Yo'q inde
 `python3 tools/versiya.py` (o'rnatilgan versiya, commit, sana, klonda
 yangi commit bormi va shu versiyadagi o'zgarishlar ro'yxati).
 
-Proyekt ishida keyin `dev` yangilanadi (`## Proyekt qoidalari`, 2-band):
-`git fetch` va `git merge --ff-only origin/dev`.
-
 ## Proyekt qoidalari
 
 Uch doimiy qoida, har proyekt repoda (genius klonining o'zida emas) va
@@ -59,7 +56,8 @@ har aktyorga topshiriqdan oldin amal qiladi:
    ishlatiladi.
 2. **Ish `dev` branchda.** Feature yoki reja branchi ochilmaydi: ish
    to'g'ridan-to'g'ri `dev` da, avval `git fetch` va
-   `git merge --ff-only origin/dev`. Parallel guruh worktree lari `dev`
+   `git merge --ff-only origin/dev` (`origin/dev` yo'q yangi repoda
+   o'tkaziladi, hisobotda bir qator). Parallel guruh worktree lari `dev`
    dan ochiladi va `dev` ga birlashadi. Push qilinmaydi: uni foydalanuvchi
    qiladi, so'ralsa qilinadi.
 3. **Commit xabari.** Inglizcha, oddiy inson tilida, qisqa: bir qator,
@@ -100,11 +98,12 @@ har aktyorga topshiriqdan oldin amal qiladi:
    bo'lim raqami bilan beradi: yechim hajmi modelning o'z mulohazasiga
    qolmaydi, shuning uchun sonnet aktyor ham opus bilan bir xil shaklda
    yozadi.
-5. **Test faqat asbob bilan.** Aktyor ish oxirida bir marta
+5. **Test faqat asbob bilan.** Aktyor ish oxirida bir marta (bug
+   qizilida va refaktoringda har harakatdan keyin `<test> --yurgiz`)
    `python3 tools/run_tests.py --diff --yurgiz`: o'zgarishga ta'sir
    qilgan testlar, modul bilan, log faylda. To'liq suite partiyada bir
    marta, asosiy sessiyada, fonda (`--hammasi`). Xom `./gradlew test`,
-   `clean`, `--rerun-tasks`, `--no-daemon` ni `guard.py` to'sadi.
+   test bilan `clean`, `--rerun-tasks`, `--no-daemon` ni `guard.py` to'sadi.
 6. **Zanjir o'rtasida savol yo'q.** Qaytariladigan qarorda standart
    tanlanadi va yoziladi; qaytarib bo'lmaydigani ish boshida, bitta
    xabarda so'raladi (`references/marshrut.md`, `Ochiq qarorlar`).
@@ -119,7 +118,9 @@ tanlanadi:
 | "review qil", "tekshir", "nima kamchilik bor" | `review` |
 | "reja tuz", "reja yangila", spetsifikatsiya yoki hujjat berildi | `rejalashtiruvchi` |
 | "tuzat", "qo'sh", "refaktoring qil", bug, kichik vazifa; "yiqildi, tuzat" ham | `dasturchi` |
-| "test yoz", "qoplash"; xato test kodining o'zida ekani aniq | `test-muhandis` |
+| "test yoz", "qoplash", flaky; xato test kodining o'zida | `test-muhandis` |
+| "sekin", "N+1", "indeks", latency | `dasturchi`; avval `schema_from_entities.py <src> --only-findings`, `EXPLAIN (ANALYZE, BUFFERS)` va `pg_stat_statements` ish boshida bitta xabarda so'raladi (architect 24.12) |
+| "quality gate yiqildi", sababi noma'lum | avval `sonar_local.py tahlil` (birinchi konteyner foydalanuvchi roziligi bilan), issue `dasturchi` ga, coverage `test-muhandis` ga |
 | "qayerda yozilgan", "qoida nima deydi" (bir-uch bo'lim) | aktyor yo'q: taklif hookidagi raqam yoki `tools/doc.sh find`, keyin `tools/doc.sh show` |
 | ko'p bo'limni o'qib taqqoslash (uchtadan ko'p) | aktyor yo'q: har bo'lim `tools/doc.sh show` bilan, qisqartmasiz |
 | "nega yiqildi", "sxema qanday" | aktyor yo'q: `python3 tools/parse_test_output.py <log>`, `python3 tools/schema_from_entities.py <src> --only-findings` |
@@ -128,10 +129,8 @@ Kod vazifasida (aktyor yoki Tez yo'l) taklif hookidagi nomzod bo'limlar
 `show` qilinmaydi: mezon `rules_for` kartasi va bo'lim raqamlari.
 Nomzod faqat "qoida nima deydi" marshrutida o'qiladi.
 
-Asboblar chiqishni o'zi qisqartiradi (birinchi yiqilgan test, faqat
-topilma), shuning uchun uni asosiy sessiya o'qiydi. Bo'lim matni oraliq
-aktyor orqali emas, `doc.sh show` bilan to'g'ridan olinadi: qoidani
-qisqartiradigan qatlam bilimni aktyorlar orasida farqli qilardi.
+Asboblar chiqishni o'zi qisqartiradi, uni asosiy sessiya o'qiydi; bo'lim
+matni `doc.sh show` bilan to'liq.
 
 Review doirasi modul yoki butun proyekt bo'lsa yoki diff bo'sh bo'lsa,
 `review` ga doira va modul ro'yxati beriladi: u agent faylidagi
@@ -163,37 +162,30 @@ da.
 `review` kamchilik topsa u **egasiga** qaytadi, lekin faqat `yuqori`
 topilma ikkinchi aylanani ochadi; `o'rta` egasi baribir chaqirilsa
 qo'shiladi, `past` hisobotga. Ikkinchi chaqiruvdan keyin review to'liq
-qayta yurmaydi. Har aktyor bitta vazifada ko'pi bilan **ikki marta**
-chaqiriladi; buni hook sanaydi va har yangi so'rovda nolga tushiradi.
-Bitta so'rov ichida ikkinchi vazifa:
-`python3 tools/budget.py --yangi-vazifa "<nom>"`.
-
-Fayllari kesishmaydigan guruhlar parallel ishlaydi: har biriga o'z git
-worktree si (`python3 tools/guruh.py yarat <id>`), promptda `guruh:`
-kartasi, oxirida bitta birlashtirish va bitta to'liq suite
-(`references/parallel.md`).
+qayta yurmaydi. Budjet: `references/aktyorlar.md`; parallel guruh:
+`references/parallel.md`.
 
 ## Tez yo'l
 
 Hajm S bo'lsa qaror bitta qisqa chaqiruvdan:
 `python3 tools/rules_for.py --no-mark --belgilar --vazifa="<vazifa>" <fayllar>`,
 oxirgi qatori `tez_yol: ha|yo'q (<sabab>)`. `ha` bo'lsa asosiy sessiya
-o'zi bajaradi (agent yo'q, eng tez): to'liq `rules_for` (kartadagi shakldan) -> Edit ->
-`run_tests.py --diff --yurgiz`. Yozib bo'lgach
+o'zi bajaradi (agent yo'q): `rules_for.py --vazifa=... <fayllar>`
+(`--no-mark` siz; Sonar kaliti bo'lsa `tools/doc.sh rule <kalit>`) ->
+test (Cheklov taqiqlamasa): bugda xatoni qayta hosil qiladigan test
+`run_tests.py <test> --yurgiz` da QIZIL (clean-code 31.2), feature da
+o'zgargan xatti-harakatga bitta test (sonarqube 17.2) -> Edit ->
+`run_tests.py --diff --yurgiz` yashil. Yozib bo'lgach
 `python3 tools/rules_for.py --no-mark --belgilar --diff` (yangi fayllar
-ham kiradi) `tez_yol: yo'q` desa yoki diff 40 qatordan katta bo'lsa
-`review` chaqiriladi. `yo'q` bo'lsa zanjir `rejalashtiruvchi`
+ham kiradi) `tez_yol: yo'q` desa, diff 40 qatordan katta yoki bug
+tuzatish bo'lsa (code-review 2.13) `review` chaqiriladi. `yo'q` bo'lsa zanjir `rejalashtiruvchi`
 (`reja: ijro`) -> `dasturchi` (kartada `reja:` bloki bilan) -> `review`.
 
 ## Model tanlash
 
-`rejalashtiruvchi` opus, `dasturchi` sonnet, `test-muhandis` sonnet,
-`review` sonnet: to'rtalasi bir xil bilim bilan (`rules_for`). Qaror
-opus da, ijro sonnet da: opus har kod vazifasiga (Tez yo'ldan
-tashqari) bitta qisqa ijro rejasi beradi, yozuvchi va review shu reja
-bilan ishlaydi. Vazifaga bitta opus chaqiruvi, guruhlarga bo'lish
-rejaning ichida; 5 tadan ko'p agent `budget.py` tasdig'ini so'raydi.
-Sabab va o'lchov: `references/yakun.md`.
+`rejalashtiruvchi` opus (vazifaga bir marta), `dasturchi`,
+`test-muhandis` va `review` sonnet. Sabab, o'lchov va agent soni
+chegarasi: `references/yakun.md`.
 
 ## Zanjir oxiri
 
@@ -204,7 +196,7 @@ marta yuradi. Yolg'iz S vazifa `run_tests.py --diff --yurgiz` bilan
 tugaydi va hisobotda `to'liq suite: partiya oxirida` deyiladi.
 
 Zanjir oxiri tartibi (har zanjirda, budjet tugasa ham): proyekt commiti
--> partiyada to'liq suite va Sonar darvozasi (gate `OK`, 0 issue) ->
+-> partiyada to'liq suite va Sonar darvozasi (gate `OK`, yangi kodda 0 issue) ->
 push (foydalanuvchi) -> memory (`memory/README.md`) -> genius saboq
 yoki "yangi saboq yo'q" -> `python3 tools/tozala.py`. Har qadamning
 tafsiloti `references/yakun.md` da.
@@ -224,7 +216,7 @@ Ish yakunida shular toza bo'lishi kerak:
   | grep '\.java$' | xargs python3 tools/check_code.py
 python3 tools/check_docs.py          # hujjat tegilgan bo'lsa
 python3 tools/run_tests.py --hammasi --yurgiz   # partiyada bir marta, fonda
-python3 tools/sonar_local.py tahlil             # Sonar darvozasi: gate OK va 0 issue
+python3 tools/sonar_local.py tahlil             # Sonar darvozasi: gate OK, yangi kodda 0 issue
 ```
 
 `xargs` 123 qaytarsa, kamida bitta faylda topilma bor.
@@ -241,7 +233,3 @@ o'chira olmaydi: ular harness darajasida ishlaydi. Amalda bu to'siq
 emas, chunki hooklar aynan shu qoidalarni majburlaydi (`guard.py`
 qimmat amalni, `check_code.py` kod qoidasini). Skill ishning tartibini
 belgilaydi, muhitni emas.
-
-Skill yangi sessiya ocha olmaydi. Buning o'rniga kontekst o'lchanadi
-va tayyor topshiriq beriladi: `python3 tools/handoff.py --prompt`.
-Batafsil: `references/kontekst.md`.

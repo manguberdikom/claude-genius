@@ -19,14 +19,14 @@ public record Money(BigDecimal amount, Currency currency) {
 ```
 
 Allaqachon bor, yozmang:
-- valyuta kodi va kasr soni jadvali o'rniga `java.util.Currency#getDefaultFractionDigits` (patterns 13.35)
-- `new BigDecimal(double)` o'rniga `new BigDecimal("0.10")` yoki `BigDecimal.valueOf` (clean-code 20.1)
-- qo'lda to'lib ketish tekshiruvi o'rniga `Math.addExact`, `Math.multiplyExact` (clean-code 20.3)
-- format va kurs ko'p bo'lsa o'z Money kutubxonasi o'rniga JSR-354 Moneta yoki Joda-Money (patterns 13.35)
+- valyuta kasr soni jadvali o'rniga `Currency#getDefaultFractionDigits` (patterns 13.35)
+- `new BigDecimal(double)`, hisoblangan `double` dan `valueOf` o'rniga satr yoki tiyin: `new BigDecimal("0.10")`, `BigDecimal.valueOf(tiyin, 2)` (code-review 14.3)
+- qo'lda overflow tekshiruvi o'rniga `Math.addExact`, `multiplyExact` (clean-code 20.3)
+- format, kurs ko'p bo'lsa o'z kutubxona o'rniga JSR-354 Moneta, Joda-Money (patterns 13.35)
 
 Tuzoqlar:
-- pul, stavka uchun `double`/`float` ikkilik kasr xatosini yig'adi: `BigDecimal`, `long` tiyin yoki `Money`, bazada `numeric` (clean-code 20.1)
-- `BigDecimal.equals` scale ni ham solishtiradi (`1.0` va `1.00` teng emas): qiymat uchun `compareTo` (clean-code 20.2)
-- scale va `RoundingMode` siz `divide` aniq bo'linmasa `ArithmeticException` beradi: ikkalasini oshkor bering (clean-code 20.2)
-- shartli chegirma: shart faqat stavka tanlaydi (chegirmasiz `ONE`), `multiply(rate).setScale(scale, mode)` keyin bir marta, scale yagona (code-review 14.3, clean-code 20.2, 37.17)
-- DTO dagi `BigDecimal` pul `@Digits` bilan ustun `numeric(p,s)` ga moslab cheklanadi (`numeric(19,4)`: `@Digits(integer = 15, fraction = 4)`): aks holda ortiqcha kasr tekshirilmay o'tadi (patterns 13.35, code-review 26.2)
+- pul, stavka `double`/`float` da kasr xatosi yig'adi: `BigDecimal`, `long` tiyin, `Money`, bazada `numeric` (clean-code 20.1)
+- `BigDecimal.equals` scale ni ham solishtiradi (`1.0` != `1.00`): `compareTo` (clean-code 20.2)
+- scale va `RoundingMode` siz `divide` aniq bo'linmasa `ArithmeticException`: ikkalasi oshkor, yaxlitlash bitta metodda (clean-code 20.2, 37.8)
+- shartli chegirma: shart faqat stavka tanlaydi (chegirmasiz `ONE`), `multiply(rate).setScale(scale, mode)` bir marta, scale yagona; chegirmasiz summa ham yaxlitlanadi: `Ochiq qaror` (code-review 14.3, clean-code 20.2, 37.17)
+- DTO dagi pul `BigDecimal` `@Digits` bilan ustun `numeric(p,s)` ga mos (`numeric(19,4)`: `@Digits(integer = 15, fraction = 4)`), aks holda kasr o'tadi (patterns 13.35, code-review 26.2)

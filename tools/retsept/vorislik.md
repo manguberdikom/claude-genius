@@ -28,4 +28,4 @@ Allaqachon bor, yozmang:
 Tuzoqlar:
 - Bazaviy konstruktor override qilinadigan metodni chaqirsa voris maydonlari hali `null` yoki 0; sozlashni konstruktor parametriga yoki `private`/`static` metodga oling (clean-code 17.2)
 - `HashMap` yoki `HashSet` dan voris olish self-use tufayli invariantni buzadi va butun API ni ochadi; maydonga delegatsiya qiling (clean-code 17.9)
-- `protected` maydon va "super ni chaqiring" shartnomasi bazaviy invariantni ochiq qoldiradi; maydon `private`, tartib `final` shablon metodda, vorislikka mo'ljallanmagan sinf `final` (clean-code 17.3, 17.4, 17.1)
+- `protected` maydon va "super ni chaqiring" shartnomasi bazaviy invariantni ochiq qoldiradi; maydon `private`, tartib `final` shablon metodda, vorislikka mo'ljallanmagan sinf `final`, lekin `@Configuration` va proxy qilinadigan bean emas (clean-code 17.3, 17.4, 17.1)

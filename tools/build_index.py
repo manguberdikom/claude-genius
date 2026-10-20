@@ -94,10 +94,16 @@ CHECKBOX_RE = re.compile(r"^\s*- \[ \]\s+(.*?)\s*$")
 # qo'llanadigan punkt. rules_for faqat `kod` ni beradi, `doc.sh checklist`
 # hammasini. Naqsh qo'pol: "Barcha o'qish metodlariga readOnly" ham
 # loyiha bo'ladi. Xato tomoni xavfsiz: punkt yo'qolmaydi, `doc.sh
-# checklist` da qoladi.
+# checklist` da qoladi. Reja, kelishuv, CI, CODEOWNERS, Checkstyle va
+# `git log` punkti ham jarayon auditi: CHANGE_RE dagi `yoz` ("rejasini
+# yozing") va `chiqar` ("30 faylni chiqarib") ularni `kod` ga qaytarardi.
+# `CI` katta harf bilan: kichik `ci` so'z ichida ham uchraydi.
 SCOPE_RE = re.compile(
-    r"Loyihada|Kod bazasi|Barcha|Hamma|CI ga|eng uzun \d+|eng yuqori \d+"
-    r"|ro['\u02bb\u02bc\u2019]yxatga oling|sanab", re.IGNORECASE)
+    r"(?i:Loyihada|Kod bazasi|Barcha|Hamma|CI ga"
+    r"|eng (?:uzun|yuqori|og['\u02bb\u02bc\u2019]ir|muhim|yuklamali) \d+"
+    r"|ro['\u02bb\u02bc\u2019]yxatga ol|sanab|rejasi(?:ni)? (?:yoz|tuz)|\bADR\b"
+    r"|CODEOWNERS|jamoa bilan|kelishib|shu ro['\u02bb\u02bc\u2019]yxat|Checkstyle"
+    r"|ArchUnit (?:qoidasi )?bilan|dashboard|git log)|\bCI\b")
 
 
 # Faqat qidirish yoki o'lchashni so'raydigan punkt ham audit: yozuvchiga u
@@ -295,10 +301,18 @@ def scan_body(doc_key, chapter, section, body, rows):
             (rule, doc_key, chapter, section, text.count(rule),
              explaining(prose, rule), int(rule in declared))
         )
-    for line in body:
+    for i, line in enumerate(body):
         match = CHECKBOX_RE.match(line)
         if match:
-            item = clean(match.group(1))
+            # Ko'p qatorli punkt: davomi chekinish bilan keladi. Faqat
+            # birinchi qator olinsa aktyorga gap yarmida uzilgan punkt
+            # borardi (clean-code 38.18).
+            parts = [match.group(1)]
+            for nxt in body[i + 1:]:
+                if not re.match(r"\s{2,}\S", nxt) or re.match(r"\s*- ", nxt):
+                    break
+                parts.append(nxt.strip())
+            item = clean(" ".join(parts))
             rows["checklist"].append(
                 (doc_key, chapter, section, item, scope(item))
             )

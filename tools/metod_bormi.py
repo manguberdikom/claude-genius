@@ -125,7 +125,7 @@ def audit(root):
     Bir teshik: maydon o'z sinfidagi domen metodlari orqali o'zgarsa to'g'ri
     (`registerOverdraft`, `close`); buzilish - boshqa sinfdan yozish
     (`a.setBalance(..)`, `a.balance = ..`) va ochiq `public` setter
-    (clean-code 16.6, 36.12). Test fayllari hisobga olinmaydi. Sonlar
+    (clean-code 16.6, 36.12); `@Deprecated` setter ochiq sanalmaydi. Test fayllari hisobga olinmaydi. Sonlar
     refaktoringdan oldin va keyin solishtiriladi (architect 34.10).
     """
     outside, open_setters, dup, long_ = [], [], [], []
@@ -136,7 +136,11 @@ def audit(root):
         text, rel = texts[path], os.path.relpath(path, root)
         for field in sorted(set(FIELD_RE.findall(text))):
             cap = field[:1].upper() + field[1:]
-            if re.search(r"\bpublic\s+\w+\s+set%s\s*\(" % re.escape(cap), text):
+            # `@Deprecated` setter: public imzo saqlangan, ochiq sanalmaydi
+            # (clean-code 35.5, 10.6).
+            if (re.search(r"\bpublic\s+\w+\s+set%s\s*\(" % re.escape(cap), text)
+                    and not re.search(r"@Deprecated(?:\([^)]*\))?\s+(?:@\w+(?:\([^)]*\))?\s+)*"
+                                      r"public\s+\w+\s+set%s\s*\(" % re.escape(cap), text)):
                 open_setters.append("%s: `set%s` ochiq" % (rel, cap))
             call = re.compile(r"\.set%s\s*\(|\.%s\s*(?:[-+*/]?=)(?!=)" % (re.escape(cap), re.escape(field)))
             where = []

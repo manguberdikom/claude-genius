@@ -88,6 +88,11 @@ CASES = [
     # tanlangan: unga kitob to'lqinlarida bo'lim qo'shilmagan.
     ("checklist X.10", ["checklist", "clean-code", "22.10"], 0, r"^22\.10$"),
     ("checklist X.11", ["checklist", "clean-code", "1.11"], 0, r"^1\.11$"),
+    # Bir nechta bob va bo'lim bitta chaqiruvda (diffsiz review o'nta bob).
+    ("checklist ko'p bob: birinchisi", ["checklist", "sonarqube", "25", "26"], 0, r"^25\.\d+$"),
+    ("checklist ko'p bob: ikkinchisi", ["checklist", "sonarqube", "25", "26"], 0, "\n\n26.17\n"),
+    ("checklist bob va bo'lim aralash", ["checklist", "clean-code", "22.10", "1.11"], 0,
+     "\n\n22.10\n"),
     ("checklist yo'q bo'lim", ["checklist", "patterns", "99.99"], 1, ""),
     ("checklist yo'q hujjat", ["checklist", "yoq"], 1, ""),
 

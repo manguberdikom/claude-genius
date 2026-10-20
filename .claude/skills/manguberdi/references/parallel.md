@@ -71,8 +71,8 @@ dasturchisi bitta hisobni yemaydi. Id `guruh.py yarat` bilan
 ro'yxatga olingan bo'lishi shart, aks holda chaqiruv umumiy hisobga
 tushadi. `hajm`, `fayllar` va `cheklov` qatorlari umumiy topshiriq
 kartasidan (`references/aktyorlar.md`, `Topshiriq kartasi`). `papka:` qatori aktyorga barcha
-yo'llar shu papka ichida ekanini aytadi: Bash buyruqlari `cd <papka>`
-bilan, Edit va Write mutlaq yo'l bilan. Asosiy daraxtga yozish guruh
+yo'llar shu papka ichida ekanini aytadi: har Bash buyrug'i `cd <papka> &&`
+bilan (cwd chaqiruvlar orasida saqlanmaydi), git `git -C <papka>`, Edit va Write mutlaq yo'l bilan. Asosiy daraxtga yozish guruh
 izolyatsiyasini buzadi.
 
 Guruhlar bir xabarda bir nechta Agent chaqiruvi bilan yurgiziladi: har

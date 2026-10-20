@@ -5,28 +5,25 @@ description: Diagnose or tune PostgreSQL behaviour behind a Java/Spring applicat
 
 # PostgreSQL: diagnostika va sozlash
 
-`docs/architect/` hujjatining IV qismi - 21-27 boblar, 80+ bo'lim.
-Mundarija: `docs/architect/README.md#iv-postgresql-chuqur-bilim`.
+`docs/architect/` hujjatining IV qismi (21-27 boblar).
 
 ## Qoida
 
-O'lchamasdan sozlamang. Tartib har doim bir xil:
+O'lchamasdan sozlamang. Tartib (`architect 24.12`):
 
-1. **Qaysi so'rov** - `pg_stat_statements` dan eng qimmatini toping
-   (`architect 24`: "`pg_stat_statements` bilan eng qimmat so'rovlarni
-   topish"; yoqish `architect 27` da).
-2. **Nega qimmat** - `EXPLAIN (ANALYZE, BUFFERS)` o'qing, taxmin qilmang
-   (`architect 24.6`, `24.7`). Rejadagi `rows` taxmini bilan haqiqiy
-   `actual rows` farqi katta bo'lsa, muammo statistikada.
-3. **Indeks kerakmi yoki sxema noto'g'rimi** - `architect 23` (indeks
-   tanlash) va `architect 25` (sxema, turlar, cheklovlar).
-4. Faqat shundan keyin parametr tegiladi (`architect 27.2`, `27.3`, `27.8`).
+0. **Rostdan sekinmi yoki kutyaptimi** - `pg_stat_activity.wait_event_type`:
+   lock kutishi (`architect 22.10`) yoki pool (`architect 27.5`) indeks
+   bilan tuzalmaydi.
+1. **Qaysi so'rov** - `pg_stat_statements` dan eng qimmati (`architect 24.10`,
+   yoqish `27.10`).
+2. **Nega qimmat** - `EXPLAIN (ANALYZE, BUFFERS)`, taxmin qilmang
+   (`architect 24.6`, `24.7`). `rows` va `actual rows` farqi katta bo'lsa,
+   muammo statistikada.
+3. **Indeks yoki sxema** - `architect 23`, `architect 25`.
+4. Faqat shundan keyin parametr (`architect 27.2`, `27.3`, `27.8`).
 
-1-2 qadam ma'lumoti jonli serverdan keladi. Avval uni foydalanuvchidan
-so'rang: `pg_stat_statements` chiqishi, `EXPLAIN (ANALYZE, BUFFERS)` matni
-yoki sekin so'rov logi. Logni yig'ish `architect 27.11` da ("Sekin so'rov
-logi va `auto_explain` sozlash"). Lokal bazadagi `EXPLAIN ANALYZE` kichik
-ma'lumotda boshqa reja berishi mumkin.
+0-2 ma'lumoti jonli serverdan: avval foydalanuvchidan so'rang (sekin
+so'rov logi: `architect 27.11`). Lokal kichik bazadagi reja boshqacha.
 
 `shared_buffers` ni oshirish sekin so'rovni tezlashtirmaydi. Noto'g'ri
 indeks `work_mem` bilan tuzalmaydi.
@@ -36,9 +33,6 @@ o'zgarishi aktyorga beriladi (`dasturchi`, sxema qarori
 `rejalashtiruvchi`); bu skill o'shanda faqat bob jadvali.
 
 ## Vazifa - bob jadvali
-
-Jadvaldagi fayl butunligicha o'qilmaydi: avval `outline`, keyin kerakli
-bo'lim `show` bilan (Asboblar).
 
 | Vazifa | Fayl |
 |---|---|
@@ -67,6 +61,7 @@ PostgreSQL muammosi ko'pincha Java tomonda tug'iladi:
 ## Asboblar
 
 ```bash
+python3 tools/rules_for.py --vazifa="<vazifa>" <entity, repository, migratsiya .sql>  # kod yoki migratsiya yozishdan OLDIN
 python3 tools/schema_from_entities.py <src>  # jadval, ustun, FK, indeks
 python3 tools/schema_from_entities.py <src> --only-findings  # EAGER, indekssiz
                                                    # FK, ORDINAL enum, precision
@@ -74,13 +69,3 @@ tools/doc.sh find -f "pg_stat_statements"    # matn ichidan qidirish
 tools/doc.sh outline architect <bob>         # bobdagi bo'limlar
 tools/doc.sh show architect <raqam>          # butun bob emas, faqat o'sha bo'lim
 ```
-
-Jadval, ustun, tur va FK ni bilish uchun bazaga ulanish shart emas:
-ularni entity sinflari va migratsiyalar beradi. Indeks, constraint,
-trigger, statistika va haqiqiy plan esa faqat bazada: tuning uchun
-`EXPLAIN (ANALYZE, BUFFERS)` chiqishi kerak, uni kod bermaydi.
-
-Har qanday ulanish, lokal va konteyner ichidagisi ham, `tools/guard.py`
-tomonidan `ask` bilan foydalanuvchi qaroriga qo'yiladi. Avval
-foydalanuvchidan chiqishni so'rang: u bergan `EXPLAIN` natijasi ulanishdan
-arzonroq va aniqroq.

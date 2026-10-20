@@ -10,7 +10,9 @@ public record Order(OrderId id, OrderStatus status, List<OrderItem> items) {
     }
 
     public Order confirmed() {
-        if (status != DRAFT) throw new IllegalStateException("faqat DRAFT");
+        if (status != DRAFT) {
+            throw new IllegalStateException("faqat DRAFT");
+        }
         return new Order(id, CONFIRMED, items);
     }
 }
@@ -19,7 +21,7 @@ public record Order(OrderId id, OrderStatus status, List<OrderItem> items) {
 Allaqachon bor, yozmang:
 - qo'lda final maydon, konstruktor, equals/hashCode o'rniga `record` (patterns 24.1)
 - `new ArrayList<>(src)` yoki `unmodifiableList` o'rniga `List.copyOf` / `Set.copyOf` / `Map.copyOf` (clean-code 16.3)
-- `collect(Collectors.toList())` o'rniga `stream().toList()` (clean-code 16.3)
+- `collect(Collectors.toList())` o'rniga `stream().toList()`, natija keyin o'zgartirilmasa (clean-code 16.3)
 - qo'lda konfiguratsiya sinfi o'rniga `@ConfigurationProperties` record, constructor binding (patterns 24.26)
 
 Tuzoqlar:

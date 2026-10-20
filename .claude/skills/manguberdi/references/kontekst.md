@@ -15,9 +15,6 @@ ularning kontekstida qoladi:
 | Butun modul yoki proyektni o'qib review qilish (diffsiz tartib) | `review` |
 | Entity va sxema tahlili | `schema_from_entities.py --only-findings` |
 
-Bo'lim matni hech qachon qisqartiruvchi agent orqali kelmaydi: qoida
-`doc.sh show` bilan to'liq o'qiladi (bo'lim ~2 KB).
-
 Asosiy sessiyada faqat qaror, yo'naltirish va yakuniy javob qoladi.
 
 ## Ikkinchi himoya: o'qish chegarasi

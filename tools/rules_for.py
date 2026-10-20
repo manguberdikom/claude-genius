@@ -7,6 +7,7 @@
     python3 tools/rules_for.py --no-mark <fayllar>   # o'qish uchun, belgilamaydi
     python3 tools/rules_for.py --vazifa="keshlang" <fayllar>  # vazifa belgilari ham
     python3 tools/rules_for.py --belgilar --vazifa="..." <fayllar>  # faqat belgilar (Tez yo'l qarori)
+    python3 tools/rules_for.py --mashinasiz <fayllar>  # check_code allaqachon yurgan (diffsiz review)
 
 Nega: aktyor ikkinchi marta chaqirilsa, sababi deyarli har doim bitta -
 qoidani oldindan bilmagan. Qidirib topish esa har aktyorda boshqacha
@@ -81,6 +82,10 @@ SHARED_TEST = os.path.join(RECIPES, "umumiy-test.md")
 # xil fayl va vazifa bilan chaqiradi, ya'ni bir xil bandlarni oladi.
 TRIGGER_RE = re.compile(r"\s*<!--\s*agar:\s*(.+?)\s*-->\s*$")
 
+# Hech qachon mos kelmaydigan naqsh: faqat vazifadan (TASK_WORDS) keladigan
+# belgi va yo'l jadvalida yo'q belgi uchun.
+NEVER = r"(?!)"
+
 # Kod ichidagi belgi -> tegishli boblar. Jadval qo'lda tuzilgan, lekin
 # har bob ishga tushishdan oldin indeksda borligi tekshiriladi, shuning
 # uchun bob ko'chsa yoki o'chsa, jim xato bo'lmaydi.
@@ -93,14 +98,19 @@ SIGNALS = [
     ("xavfsizlik: SQL", r"createNativeQuery|createQuery|\bStatement\b|@Query\b|jdbcTemplate",
      [("code-review", "29"), ("sonarqube", "26")]),
     ("xavfsizlik: sir va kripto",
-     r"\bCipher\.|MessageDigest\.|KeyStore\b|SecretKey|getPassword\(|apiKey|secretKey",
+     r"\bCipher\.|MessageDigest\.|KeyStore\b|SecretKey|getPassword\(|apiKey|secretKey"
+     r"|PasswordEncoder|SecureRandom|new\s+Random\(|Math\.random\(",
      [("code-review", "32")]),
+    # `URI.create("/api/orders/" + id)` (web kartasining o'z shakli) SSRF
+    # emas: xavf foydalanuvchi bergan URL da (code-review 31.1). Satr
+    # literali strip_noise da bo'sh joy bo'ladi, shuning uchun argument
+    # literal bilan boshlansa `(` dan keyin bo'sh joy va `+` yoki `)` keladi.
     ("xavfsizlik: tashqi kirish",
-     r"MultipartFile|ObjectInputStream|readObject\(|new\s+URL\(|URI\.create\(",
+     r"MultipartFile|ObjectInputStream|readObject\(|new\s+URL\(|URI\.create\((?!\s*[+)])",
      [("code-review", "31")]),
     ("xavfsizlik: ruxsat",
-     r"@PreAuthorize\b|SecurityFilterChain|@Secured\b|@RolesAllowed\b"
-     r"|@EnableWebSecurity\b|PasswordEncoder|JwtDecoder",
+     r"@P(?:re|ost)Authorize\b|SecurityFilterChain|@Secured\b|@RolesAllowed\b"
+     r"|@EnableWebSecurity\b|JwtDecoder",
      [("patterns", "18"), ("code-review", "30"), ("code-review", "28"),
       ("architect", "20")]),
     # Bog'liqlik qo'shish supply chain xavfi, shuning uchun shu blokda.
@@ -122,14 +132,22 @@ SIGNALS = [
      r"|@Repository\b|\bRepository<|@RepositoryDefinition\b",
      [("patterns", "9"), ("architect", "18"), ("code-review", "23"),
       ("code-review", "24")]),
+    # architect 22: izolyatsiya, lost update va deadlock (22.5, 22.8).
     ("tranzaksiya", r"@(?:[\w.]+\.)?Transactional\b",
-     [("architect", "19"), ("code-review", "19")]),
+     [("architect", "19"), ("code-review", "19"), ("architect", "22")]),
     ("hodisa", r"@(?:Transactional)?EventListener\b|ApplicationEventPublisher",
      [("architect", "19"), ("patterns", "5")]),
     ("sxema migratsiyasi",
      r"Flyway|Liquibase|\bV\d+__|changeSet"
      r"|(?i:\b(?:alter|create|drop)\s+(?:table|(?:unique\s+)?index)\b)",
-     [("architect", "33"), ("code-review", "25")]),
+     [("architect", "33"), ("code-review", "25"), ("architect", "25"),
+      ("architect", "23")]),
+    # Faqat vazifadan (TASK_WORDS), kartasiz (CHAPTER_ONLY): sekin so'rov
+    # tartibi architect 24.12, siklda I/O code-review 38.2, o'lchovsiz
+    # optimallashtirish yo'q (architect 8).
+    ("unumdorlik", NEVER,
+     [("code-review", "38"), ("architect", "24"), ("architect", "23"),
+      ("code-review", "24"), ("architect", "8")]),
 
     # --- integratsiya ---
     ("tashqi chaqiruv", r"\b(?:RestTemplate|WebClient|RestClient|FeignClient)\b",
@@ -141,8 +159,11 @@ SIGNALS = [
      r"|enable-auto-commit|auto-offset-reset|\bspring\.kafka\b|(?m:^\s*kafka:)",
      [("architect", "29"), ("patterns", "16"), ("code-review", "22"),
       ("code-review", "27")]),
+    # `@ConfigurationProperties` record: kartadagi `@Validated` qoidasi
+    # (architect 16.6) shu faylga kerak. Konfiguratsiya belgisida ham qoladi.
     ("sozlama",
-     r"\bhikari\b|\bdatasource\b|management\.endpoints|\bspring\.jpa\b"
+     r"@ConfigurationProperties\b|\bhikari\b|\bdatasource\b|management\.endpoints"
+     r"|\bspring\.jpa\b"
      r"|(?m:^\s*(?:jpa|management|hikari|datasource):)",
      [("architect", "27"), ("code-review", "21")]),
 
@@ -169,6 +190,9 @@ SIGNALS = [
     ("web qatlami", r"@RestController\b|@Controller\b|@(?:Get|Post|Put|Delete|Request)Mapping\b",
      [("patterns", "7"), ("architect", "17"), ("code-review", "20"),
       ("clean-code", "27")]),
+    # Faqat vazifadan, kartasiz: javob yoki imzo shartnomasini o'zgartirish
+    # (breaking change katalogi code-review 37.1).
+    ("API moslik", NEVER, [("code-review", "37")]),
     ("konfiguratsiya",
      r"@Configuration\b|@ConfigurationProperties\b|@Profile\b|@ConditionalOn\w+|@Value\s*\(",
      [("code-review", "21"), ("code-review", "18"), ("architect", "16")]),
@@ -187,11 +211,20 @@ SIGNALS = [
      [("architect", "11"), ("architect", "12")]),
     ("asinxron", r"@Async\b|CompletableFuture",
      [("architect", "12"), ("patterns", "19")]),
+    # Faqat vazifadan, kartasiz: GC va heap (architect 10.9 leak), JFR va
+    # thread dump (architect 14.2-14.4), chegarasiz to'plam (code-review 16.1).
+    ("JVM xotira", NEVER,
+     [("architect", "10"), ("architect", "14"), ("code-review", "16")]),
 
     # --- kod shakli ---
-    ("xato bilan ishlash", r"\bthrow new\b|\bcatch\s*\(|\bfinally\b",
+    # `@RestControllerAdvice` web regexiga tushmaydi (`\b` dan keyin `A`).
+    ("xato bilan ishlash", r"\bthrow new\b|\bcatch\s*\(|\bfinally\b"
+     r"|@ExceptionHandler\b|@(?:Rest)?ControllerAdvice\b",
      [("clean-code", "18"), ("clean-code", "19")]),
-    ("tenglik shartnomasi", r"\bequals\s*\(|\bhashCode\s*\(|\bcompareTo\s*\(",
+    # Faqat e'lon: `a.equals(b)` yoki `amount.compareTo(x)` chaqiruvi
+    # kartani (equals/hashCode YOZISH) bermaydi va pul kartasini siqmaydi.
+    ("tenglik shartnomasi",
+     r"\bboolean\s+equals\s*\(|\bint\s+hashCode\s*\(|\bint\s+compareTo\s*\(",
      [("clean-code", "15")]),
     # Sinf vorisligi. `interface X extends JpaRepository` vorislik emas.
     ("vorislik", r"\bclass\s+\w+(?:<[^>]*>)?\s+extends\s+\w|\babstract\s+class\b|\bsuper\.",
@@ -217,9 +250,22 @@ SIGNALS = [
     ("shart va sikl", r"\bswitch\s*\(|\belse\s+if\b|\bfor\s*\(|\bwhile\s*\(",
      [("clean-code", "6"), ("clean-code", "7"), ("sonarqube", "15")]),
     # Vazifadan keladi (TASK_WORDS): eski kodni qayta tuzish tartibi.
-    ("refaktoring", r"(?!)",
+    ("refaktoring", NEVER,
      [("architect", "34"), ("clean-code", "38"), ("clean-code", "32")]),
+    # Faqat vazifadan, kartasiz. Sonar: gate (sonarqube 6), faqat yangi
+    # kod (7.4), qamralmagan kod va branch (11, 18), hotspot (16). Kalit
+    # bo'yicha bo'lim `doc.sh rule java:Sxxxx` da.
+    ("sonar", NEVER,
+     [("sonarqube", "6"), ("sonarqube", "7"), ("sonarqube", "11"),
+      ("sonarqube", "18"), ("sonarqube", "16")]),
+    # Noldan proyekt: arxitektura uslubi va paketlash (patterns 12.28),
+    # xususiyat bo'yicha paket (architect 4.8).
+    ("yangi proyekt", NEVER, [("patterns", "12"), ("architect", "4")]),
 ]
+
+# Kartasiz belgilar: faqat bob yo'naltiradi. Karta ~1.5 KB va MAX_RECIPES
+# o'rnini egallaydi; bu belgilarning mezoni boblarda.
+CHAPTER_ONLY = {"unumdorlik", "JVM xotira", "sonar", "API moslik", "yangi proyekt"}
 
 # Build fayllari. Ular kod kabi tekshiruvga muhtoj, lekin .java emas.
 # `.versions.toml` Gradle version catalog: bog'liqlik versiyasi u yerda.
@@ -251,6 +297,8 @@ PATH_SIGNALS = {
 NAME_SIGNALS = {
     "xavfsizlik: ruxsat": r"Security\w*\.(?:java|kt)$",
     "entity va ORM": r"/(?:entity|entities)/[^/]+\.(?:java|kt)$|Entity\.(?:java|kt)$",
+    # Yangi entity yangi jadval: migratsiya kartasi ham kerak.
+    "sxema migratsiyasi": r"/(?:entity|entities)/[^/]+\.(?:java|kt)$|Entity\.(?:java|kt)$",
     "ma'lumotga kirish": r"Repository\.(?:java|kt)$",
     "broker": r"(?:Listener|Consumer)\.(?:java|kt)$",
     "test": r"/test/|(?:Test|Tests|IT)\.(?:java|kt)$",
@@ -259,6 +307,7 @@ NAME_SIGNALS = {
     "mapper": r"Mapper\.(?:java|kt)$",
     "rejalashtirilgan ish": r"(?:Job|Scheduler)\.(?:java|kt)$",
     "servis qatlami": r"Service\.(?:java|kt)$",
+    "xato bilan ishlash": r"(?:ExceptionHandler|Advice)\.(?:java|kt)$",
 }
 
 # Har Java fayl uchun, belgisidan qat'i nazar.
@@ -267,8 +316,6 @@ ALWAYS = [("clean-code", "2"), ("clean-code", "4"), ("code-review", "8")]
 # `@org.springframework...Transactional` kabi to'liq nomli annotatsiya
 # qisqa shaklga keltiriladi: aks holda har `@X\b` naqshi uni ko'rmaydi.
 FQN_ANNOTATION_RE = re.compile(r"@(?:[a-z_]\w*\.)+(?=[A-Z])")
-
-NEVER = r"(?!)"
 
 
 def chapter_titles():
@@ -386,34 +433,68 @@ TASK_WORDS = {
     "xavfsizlik: SQL": r"\bsql\b|so'rov qur|query",
     "xavfsizlik: sir va kripto": r"parol|password|shifrla|kripto|\btoken|hash(?!code)|(?<!')\bsir\b",
     "xavfsizlik: ruxsat": r"ruxsat|\brol\b|rollar|auth|login|kirish huquq",
+    "bog'liqlik": r"bog'liqli[kg]|dependency|kutubxona|pom\.xml|build\.gradle|libs\.versions",
     "entity va ORM": r"entity|jadval|\borm\b|jpa",
-    "tranzaksiya": r"tranzaksiya|transaction|rollback",
+    "ma'lumotga kirish": r"repository|sahifala|pageable|jpql|findby|fetch join|\bn ?\+ ?1\b",
+    # Baza qulfi: deadlock, izolyatsiya, lost update (architect 22.5, 22.8).
+    "tranzaksiya": r"tranzaksiya|transaction|rollback|deadlock|izolyatsiya|isolation"
+                   r"|lost update|optimistic|pessimistic|for update",
     "hodisa": r"\bevent|hodisa",
     "sxema migratsiyasi": r"migratsiya|flyway|liquibase|ustun qo'sh|indeks qo'sh",
+    "unumdorlik": r"sekin|tezlashtir|performance|unumdor|latency|\bp9\d\b|explain|pg_stat"
+                  r"|seq scan|\bindeks|\bindex\b|\bn ?\+ ?1\b|optimiz|optimallashtir",
     "tashqi chaqiruv": r"tashqi (?:servis|api|chaqiruv|tizim)|\bhttp\b|rest ?client|webclient|to'lov",
     "chidamlilik": r"retry|qayta urin|circuit|timeout|bulkhead|rate ?limit",
     "broker": r"kafka|rabbit|\bnavbat|queue|consumer|listener",
-    "sozlama": r"sozlama|application\.ya?ml|properties fayl",
+    "sozlama": r"sozla|application\.ya?ml|properties fayl",
+    "test: asinxron": r"flaky|beqaror|ba'zan yiqil",
+    "test": r"\btest|coverage|jacoco",
     "web qatlami": r"endpoint|controller|\b(?:get|post|put|patch|delete) /|\bapi\b",
+    "API moslik": r"breaking|moslik|deprecat|versiyala|(?:api|javob) shartnoma|imzosi"
+                  r"|(?:maydon|endpoint|parametr|javob)\w* (?:\w+ )?"
+                  r"(?:olib tashla|o'chir|o'zgartir|nomini)",
     "mapper": r"mapper|mapping|dto ga",
     "keshlash": r"kesh|cache",
-    "rejalashtirilgan ish": r"scheduled|\bcron|rejalashtir|har (?:kuni|soat|daqiqa)",
+    # `rejalashtir` yolg'iz emas: "reja tuz" so'rovi @Scheduled kartasini olardi.
+    "rejalashtirilgan ish": r"scheduled|\bcron|rejalashtirilgan (?:ish|vazifa)"
+                            r"|har (?:kuni|soat|daqiqa)",
     "konkurentlik": r"thread|parallel|concurren|race|\block\b|qulf",
     "asinxron": r"async|asinxron|fonda",
+    "JVM xotira": r"\boom\b|outofmemory|heap|\bgc\b|garbage|leak|xotira siz"
+                  r"|profil(?:er|ing|la)|\bjfr\b|thread dump|metaspace",
     "xato bilan ishlash": r"istisno|exception|xato qaytar|\b404\b",
     "pul va son": r"\bpul\b|summa|narx|money|valyuta",
     "sana va vaqt": r"\bsana|vaqt zona|timezone|\bdate\b|muddat",
     "loglash": r"\blog(?:la|ga|ging)?\b|loglash",
-    "test": r"\btest",
-    "refaktoring": r"refaktor|optimiz|eski kod|legacy|soddalashtir|qayta tuz|takror",
+    # `takror` yolg'iz emas: "takroriy bosishda ikki to'lov" bug fix, va
+    # refaktoring zanjiri xato xulqni xarakterizatsiya testi bilan qulflardi.
+    # Optimallashtirish `unumdorlik` da.
+    "refaktoring": r"refaktor|eski kod|legacy|soddalashtir|qayta tuz(?!at)|duplicat"
+                   r"|takror(?:iy|langan|lanadigan) (?:kod|blok|metod)|takrorlanish"
+                   r"|complexity|murakkablik",
+    "sonar": r"sonar|java:s\d+|\bs\d{3,4}\b|quality ?gate|coverage|hotspot|jacoco",
+    "yangi proyekt": r"noldan|from scratch|yangi (?:proyekt|loyiha|mikroservis|ilova)"
+                     r"|yangi servis(?:ni)? (?:yarat|qur|och)",
 }
 
 
-# Tez yo'lni yopadigan vazifa belgilari (SKILL.md, `Tez yo'l`): ular
-# xato bo'lsa ma'lumot yoki xavfsizlik buziladi, shuning uchun aktyor va
-# review ga boradi.
+# Tez yo'lni yopadigan belgilar (SKILL.md, `Tez yo'l`): ular xato bo'lsa
+# ma'lumot, xavfsizlik, mijoz shartnomasi yoki prod resursi buziladi,
+# shuning uchun aktyor va review ga boradi. Fayl yo'lidan chiqqan belgi
+# (migratsiya .sql, application.yml, build fayli) vazifa so'zisiz ham
+# yopadi: path_labels.
 FAST_BLOCK = {"tranzaksiya", "sxema migratsiyasi", "sozlama", "konkurentlik",
-              "asinxron", "refaktoring"}
+              "asinxron", "refaktoring", "bog'liqlik", "API moslik", "pul va son",
+              "unumdorlik", "JVM xotira", "yangi proyekt"}
+
+
+def path_labels(paths):
+    """Fayl yo'lidan chiqadigan belgilar: PATH_SIGNALS va build fayli."""
+    own = {label for p in paths for label, rx in PATH_SIGNALS.items()
+           if re.search(rx, _full(p).replace("\\", "/"))}
+    if any(p.endswith(BUILD_FILES) for p in paths):
+        own.add("bog'liqlik")
+    return own
 
 
 def fast_path(labels):
@@ -793,6 +874,36 @@ def past_mistakes(slug=None, labels=None, names=()):
     return out
 
 
+def pick_chapters(signals):
+    """MAX_CHAPTERS ta bob: (to'plam, tartib).
+
+    Avval vazifa belgilari, keyin qolgani; har guruhda navbatma-navbat:
+    har belgining birinchi bobi, keyin ikkinchisi. Ketma-ket olinsa 4-5
+    bobli bitta belgi (entity, test, web) chegarani yolg'iz egallab,
+    tranzaksiya va migratsiya boblari "sig'madi" ga tushardi.
+    """
+    wanted, order = set(), []
+    for first in (True, False):
+        group = [chs for _, chs, where in signals if (where == "vazifa") == first]
+        for depth in range(max(map(len, group), default=0)):
+            for chs in group:
+                if depth < len(chs) and chs[depth] not in wanted \
+                        and len(order) < MAX_CHAPTERS:
+                    wanted.add(chs[depth])
+                    order.append(chs[depth])
+    return wanted, order
+
+
+def card_ref(path):
+    """Karta yo'li: klonda nisbiy, boshqa proyektda mutlaq (u yerdan ochiladi)."""
+    return os.path.relpath(path, ROOT) if in_clone() else path
+
+
+def with_tool_paths(text):
+    """Karta matnidagi `python3 tools/x.py` boshqa proyektda mutlaq buyruq."""
+    return re.sub(r"python3 tools/(\w+\.py)", lambda m: tool_cmd(m.group(1)), text)
+
+
 def mechanical(paths):
     """check_code topgan muammolar: (qator, kalit va bo'lim, fayl, qisqa).
 
@@ -859,7 +970,10 @@ def main():
         print("# %d fayl, %d belgi\n" % (len(paths), len(signals)))
         for label, _, where in signals:
             print("%-22s %s" % (label, where))
-        verdict, why = fast_path(topic if task else [l for l, _, _ in signals])
+        # Vazifa berilsa vazifa belgilari va fayl yo'lidan chiqqan belgilar:
+        # migratsiya, application.yml va build fayli vazifa so'zisiz ham L.
+        verdict, why = fast_path(sorted(topic | path_labels(paths)) if task
+                                 else [l for l, _, _ in signals])
         print("\ntez_yol: %s (%s)" % (verdict, why))
         return 0
     # Zanjirning birinchi qadami bajarilgani belgilanadi: check_code Java
@@ -870,12 +984,7 @@ def main():
     if "--no-mark" not in args:
         mark(paths, [label for label, _, _ in signals])
 
-    wanted, order = set(), []
-    for _, chapters, _ in signals:
-        for ch in chapters:
-            if ch not in wanted and len(order) < MAX_CHAPTERS:
-                wanted.add(ch)
-                order.append(ch)
+    wanted, order = pick_chapters(signals)
     # Test fayli berilsa uning testing boblari chegaradan tashqarida:
     # aks holda sinalayotgan kodning entity, tranzaksiya va HTTP belgilari
     # MAX_CHAPTERS ni to'ldirib, test-muhandis birorta test bobini olmasdi.
@@ -925,8 +1034,12 @@ def main():
 
     # Test fayli berilsa uning kartasi oldin: test-muhandisga sinalayotgan
     # kodning tranzaksiya kartasidan test kartasi kerakroq.
+    # Ko'p faylli review da (10 fayldan bittasi test) esa yo'q: aks holda
+    # entity, tranzaksiya va migratsiya kartalari "boshqa kartalar" ga tushardi.
     found_labels = [label for label, _, _ in signals]
-    if is_test:
+    tests = sum(bool(re.search(NAME_SIGNALS["test"], "/" + p.replace("\\", "/")))
+                for p in paths)
+    if is_test and ("test" in topic or 2 * tests >= len(paths)):
         found_labels.sort(key=lambda label: not label.startswith("test"))
     cards = recipes(found_labels)
     if cards:
@@ -939,12 +1052,12 @@ def main():
             # tuzoqlar kerak.
             if topic and label not in topic:
                 text = re.sub(r"\nMinimal shakl[^\n]*\n\n```.*?```\n",
-                              "\nShakl: %s\n" % os.path.relpath(path, ROOT),
+                              "\nShakl: %s\n" % card_ref(path),
                               text, count=1, flags=re.S)
-            print("#" + text + "\n")
+            print("#" + with_tool_paths(text) + "\n")
         if len(cards) > MAX_RECIPES:
             print("(boshqa kartalar: %s)\n" % ", ".join(
-                os.path.relpath(p, ROOT) for _, p in cards[MAX_RECIPES:]))
+                card_ref(p) for _, p in cards[MAX_RECIPES:]))
     sources = any(p.endswith(SOURCES) for p in paths)
     # Trigger tegilgan fayl, vazifa va build fayllarida qidiriladi: Lombok
     # bandi `pom.xml` dagi bog'liqlikdan chiqadi.
@@ -953,7 +1066,7 @@ def main():
                          + [text for _, text in _project_texts(paths)])
     for path, wanted_here in ((SHARED_CODE, sources), (SHARED_TEST, is_test)):
         if wanted_here and os.path.exists(path):
-            print(shared_rules(path, haystack) + "\n")
+            print(with_tool_paths(shared_rules(path, haystack)) + "\n")
 
     print("# Tegishli boblar\n")
     # Holat belgisi: `!` tekshirilmagan bob (AI yozgan), `?`
@@ -1004,14 +1117,17 @@ def main():
         print("\n  qolgani va loyiha auditi punktlari (%d): %s checklist <hujjat> <bob>"
               % (project, tool_cmd("doc.sh")))
 
-    found = mechanical(paths)
-    print("\n# Mashina topgani (%d)\n" % len(found))
-    for line, ref, _, _ in found[:MAX_ITEMS]:
-        print("  " + line)
-        if ref:
-            print("    " + ref)
-    if not found:
-        print("  yo'q")
+    # Diffsiz review da check_code butun src ga allaqachon yurgan: takror
+    # bayt kontekstga tushmasin.
+    found = [] if "--mashinasiz" in args else mechanical(paths)
+    if "--mashinasiz" not in args:
+        print("\n# Mashina topgani (%d)\n" % len(found))
+        for line, ref, _, _ in found[:MAX_ITEMS]:
+            print("  " + line)
+            if ref:
+                print("    " + ref)
+        if not found:
+            print("  yo'q")
     rest = {}
     for _, _, name, short in found[MAX_ITEMS:]:
         rest.setdefault(name, []).append(short)

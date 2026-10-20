@@ -32,27 +32,27 @@ tegiladigan ishlab chiqarish fayllari kiradi, ularning testlari kirmaydi.
 
 | Hajm | Belgisi | Zanjir | Reja |
 |---|---|---|---|
-| S | 1-3 fayl, bitta qatlam, qaytariladi | `rules_for --belgilar` da `tez_yol: ha`: asosiy sessiya o'zi, `review` faqat diff xavfli yoki 40 qatordan katta bo'lsa; `tez_yol: yo'q`: `rejalashtiruvchi` (ijro rejasi) -> `dasturchi` -> `review` | ijro (25 qatorgacha, fayl yo'q) |
+| S | 1-3 fayl, bitta qatlam, qaytariladi | `rules_for --belgilar` da `tez_yol: ha`: asosiy sessiya o'zi, `review` faqat diff xavfli, 40 qatordan katta yoki bug tuzatish bo'lsa; `tez_yol: yo'q`: `rejalashtiruvchi` (ijro rejasi) -> `dasturchi` -> `review` | ijro (25 qatorgacha, fayl yo'q) |
 | M | 4 va undan ko'p fayl yoki bir necha qatlam, qaytarib bo'lmaydigan qaror yo'q | `rejalashtiruvchi` (ijro rejasi, test qismi bilan) -> `dasturchi` -> `test-muhandis` va `review` parallel -> bitta tuzatish aylanasi | ijro |
-| L | qaytarib bo'lmaydigan qaror (sxema migratsiyasi, API shartnomasi, tashqi bog'liqlik, ma'lumot formati), talab hujjatdan yoki bir necha modul | `rejalashtiruvchi` (to'liq reja) -> har guruhga `dasturchi`, guruhlar parallel worktree da -> birlashgan diffga bitta `review` va `test-muhandis` | to'liq |
+| L | qaytarib bo'lmaydigan qaror (sxema migratsiyasi, API shartnomasi, tashqi bog'liqlik, ma'lumot formati), talab hujjatdan yoki bir necha modul | `rejalashtiruvchi` (to'liq reja) -> har guruhga `dasturchi`, guruhlar parallel worktree da -> birlashgan diffga `test-muhandis`, keyin bitta `review` (kod va test birga, pathspec yo'q) | to'liq |
 
-**Refaktoring** (vazifada refaktor, optimallashtir, eski kod, takror;
+**Refaktoring** (vazifada refaktor, eski kod, takroriy kod;
 `rules_for` belgisi `refaktoring`, Tez yo'l yopiq) hajmidan qat'i nazar
-shu zanjirda (architect 34.1, Feathers tartibi): `rejalashtiruvchi`
-(ijro rejasi: `metod_bormi.py --audit` ro'yxati va sonlari, qadamlar,
-tegilmaydigan joy) -> `test-muhandis` (xarakterizatsiya testi, eski
-kodda yashil) -> `dasturchi` (bitta harakat, test, keyingisi;
-xarakterizatsiya testiga tegilmaydi) -> `review` (testlar o'zgarmagan,
-audit sonlari kamaygan, public imzo va xato matni saqlangan).
+shu zanjirda (architect 34.1, 34.3): `rejalashtiruvchi`
+(ijro rejasi: `metod_bormi.py --audit` sonlari, qadamlar, tegilmaydigan
+joy) -> `test-muhandis` (xarakterizatsiya testi eski kodda yashil;
+hisobotda test fayllari va `sha1sum <fayllar>`, asosiy sessiya uni
+kartaga qo'shadi) -> `dasturchi` (bitta harakat, shu testlar, keyingisi)
+-> `review` (`sha1sum` qayta hisoblanib solishtiriladi, audit sonlari
+kamaygan, public imzo va xato matni saqlangan).
+
+**Faqat test** (qoplash, test tuzatish, flaky; ishlab chiqarish fayli
+o'zgarmaydi) hajmidan qat'i nazar: `test-muhandis` -> `review` (doira
+test fayllari, pathspec yo'q; code-review 35.7), reja yo'q.
 
 Shubha bo'lsa kichigi olinadi: S dan M ga o'tish arzon (review topilmasi
 test muhandisini chaqiradi), M o'rniga L esa butun reja bosqichini
 qo'shadi.
-
-Reja qimmat: u faqat L da yoki foydalanuvchi ochiq so'raganda tuziladi.
-Qolgan hammasi rejasiz: `dasturchi` toza kod va dizayn pattern
-qoidalari asosida o'zi bajaradi. Bitta bug uchun reja yozish ishni
-sekinlashtiradi va hech narsa qo'shmaydi.
 
 Cheklov zanjirni qisqartiradi (`references/aktyorlar.md`, `Cheklov va testlar`):
 test o'zgarishi taqiqlangan bo'lsa M da `test-muhandis` chaqirilmaydi.
@@ -60,19 +60,8 @@ test o'zgarishi taqiqlangan bo'lsa M da `test-muhandis` chaqirilmaydi.
 ## Aktyor tanlash
 
 Niyat aktyorni belgilaydi. Bitta promptda bir nechta niyat bo'lsa, ular
-ketma-ket bajariladi, aralashtirilmaydi.
-
-| Niyat | Aktyor | Izoh |
-|---|---|---|
-| Holatni bilish, kamchilik topish | `review` | kod o'zgarmaydi; diff bo'lmasa doira va modul ro'yxati beriladi |
-| Yo'lni belgilash | `rejalashtiruvchi` | S/M da ijro rejasi (Tez yo'ldan tashqari), L yoki so'ralganda to'liq reja |
-| Kodni o'zgartirish | `dasturchi` | bug, pattern, refaktoring, reja qadami; "tuzat" va "yiqildi" birga kelsa ham |
-| Testlar | `test-muhandis` | qoplash so'ralganda yoki xato test kodining o'zida ekani aniq bo'lganda |
-| Qoida matnini keltirish | aktyor yo'q | `doc.sh show` bilan, qisqartmasiz |
-| Chiqish yoki sxemani o'qish | aktyor yo'q | `parse_test_output.py`, `schema_from_entities.py --only-findings` |
-
-Reja tuzish zanjirda `rejalashtiruvchi` aktyoriga boradi: alohida reja
-skilli yo'q.
+ketma-ket bajariladi, aralashtirilmaydi. Niyatdan aktyorga jadval:
+`SKILL.md`, `Marshrut`.
 
 ## Hujjat berilgan bo'lsa
 
@@ -99,7 +88,7 @@ turga bo'linadi:
 | Qaror | Nima qilinadi |
 |---|---|
 | Qaytariladigan: nom, joy, pattern varianti, test turi, kutubxona ichidagi API tanlovi | standart tanlanadi va ish davom etadi |
-| Qaytarib bo'lmaydigan: ma'lumot o'chirish yoki buzuvchi migratsiya, ommaviy API shartnomasi, yangi tashqi bog'liqlik, xavfsizlik siyosati | ish boshida, bitta xabarda, hammasi birga so'raladi |
+| Qaytarib bo'lmaydigan: ma'lumot o'chirish yoki buzuvchi migratsiya, ommaviy API shartnomasi, yangi tashqi bog'liqlik, xavfsizlik siyosati; yangi proyektda build asbobi, Java va Boot versiyasi, baza (architect 1.5) | ish boshida, bitta xabarda, hammasi birga so'raladi |
 
 Standart tanlash tartibi: proyekt konvensiyasi, keyin `CLAUDE.md` va
 memory, keyin qo'llanma bo'limi, keyin eng tor va eng qaytariladigan

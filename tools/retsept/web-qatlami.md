@@ -30,5 +30,5 @@ Allaqachon bor, yozmang:
 Tuzoqlar:
 - Entity kirish yoki javob bo'lsa mass assignment va maydon oqishi; alohida record DTO (code-review 20.1)
 - Controller repository olmaydi, DTO mapping service ichida: aks holda `LazyInitializationException` (architect 17.7, code-review 6.6)
-- `ResponseEntity.of(Optional)` (patterns 24.5) 404 ni tanasiz beradi, advice shaklidan farqli (clean-code 27.2)
+- `ResponseEntity.of(Optional)` 404 ni tanasiz beradi, advice shaklidan farqli (patterns 24.5)
 - Ichki DTO ro'yxatida `@Valid` bo'lmasa ichi tekshirilmaydi (code-review 20.2, clean-code 27.4)

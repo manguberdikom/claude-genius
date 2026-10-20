@@ -3,6 +3,38 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.5.1 (2026-10-20)
+
+O'lchovdan keyin (7 vazifa, keyin 4 qayta yurish):
+- Mavjud `String` holat turi vazifa so'ramasa o'zgarmaydi; refaktoringda
+  public setter qabul qiladigan qiymatlar ham xulq (clean-code 38.11).
+- O'zgartiruvchi metod invariantni o'zi tekshiradi (patterns 13.15); xato
+  istisno bilan, `false` qaytarib emas (clean-code 18.1); pul yaxlitlash
+  bitta metodda (clean-code 37.8).
+
+## 0.5.0 (2026-10-20)
+
+Qatorma-qator audit (10 yo'nalish, 169 tasdiqlangan topilma) natijasi.
+
+- Qamrov: rules_for ga kartasiz belgilar `unumdorlik`, `JVM xotira`,
+  `sonar`, `API moslik`, `yangi proyekt`; deadlock va izolyatsiya
+  tranzaksiyaga, flaky test asinxron testga. Boblar vazifa mavzusidan
+  navbatma-navbat tanlanadi (bitta belgi 8 o'rinni egallamaydi).
+- Tez yo'l fayl yo'lidan ham yopiladi (migratsiya, application.yml,
+  build fayli); bog'liqlik, API moslik, pul, unumdorlik, yangi proyekt
+  ham yopadi.
+- Mexanik darvozalar: check_code Lombok `@Setter`/`@Data` va oddiy
+  sinfdagi ikki yozuvchini ushlaydi, `@Deprecated` setter o'tadi;
+  run_tests testga tegmaydigan o'zgarishda exit 5; sonar_local darvozasi
+  faqat yangi kod bo'yicha.
+- Bug fix har yo'lda avval qizil regressiya testi; refaktoringda
+  xarakterizatsiya testlari `sha1sum` bilan qotiriladi.
+- Diffsiz va eski proyekt review: `metod_bormi --audit`, code-review 12,
+  38, Sonar ma'lumoti, ko'p bobli `doc.sh checklist`.
+- 42 kartadagi xato misol va ziddiyatlar tuzatildi, takrorlar olib
+  tashlandi; aktyor va skill fayllari kichraydi (jami ~6 KB).
+- 8 bobdagi misol kartaga moslandi; ular `tekshirilmoqda` ga qaytdi.
+
 ## 0.4.1 (2026-10-19)
 
 - `metod_bormi.py --audit` bir teshik buzilishini aniq sanaydi: boshqa

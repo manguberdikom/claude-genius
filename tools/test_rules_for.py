@@ -528,6 +528,36 @@ def main():
             ("static ArrayList", "konkurentlik", sig(
                 "Reg.java", "class Reg { static List<String> ALL = new ArrayList<>(); }\n")),
         ]
+        gaps += [
+            # Sozlama kartasidagi `@Validated` qoidasi record ga kerak.
+            ("@ConfigurationProperties record", "sozlama", sig(
+                "PayProps.java", "@ConfigurationProperties(\"pay\")\n"
+                                 "record PayProps(String url) {}\n")),
+            ("@RestControllerAdvice", "xato bilan ishlash", sig(
+                "ApiErrors.java", "@RestControllerAdvice class ApiErrors {\n"
+                                  "  @ExceptionHandler(X.class) ProblemDetail h(X e) "
+                                  "{ return null; }\n}\n")),
+            ("PasswordEncoder", "xavfsizlik: sir va kripto", sig(
+                "PasswordConfig.java", "class PasswordConfig { PasswordEncoder e() {\n"
+                "  return new Argon2PasswordEncoder(16, 32, 1, 19456, 2); } }\n")),
+            ("SecureRandom token", "xavfsizlik: sir va kripto", sig(
+                "ResetTokens.java", "class ResetTokens { SecureRandom r = new SecureRandom(); }\n")),
+            ("URI.create(raw)", "xavfsizlik: tashqi kirish", sig(
+                "Fetch.java", "class Fetch { Object f(String raw) "
+                              "{ return URI.create(raw); } }\n")),
+            ("equals e'loni", "tenglik shartnomasi", sig(
+                "Money2.java", "class Money2 { public boolean equals(Object o) "
+                               "{ return o == this; } }\n")),
+            ("yangi entity: migratsiya", "sxema migratsiyasi",
+             set(labels([os.path.join(tmp, "yoq", "OrderEntity.java")]))),
+            ("yangi advice nomdan", "xato bilan ishlash",
+             set(labels([os.path.join(tmp, "yoq", "ApiExceptionHandler.java")]))),
+        ]
+        created = sig("Created.java", "class Created { Object c(long id) { return "
+                                      "ResponseEntity.created(URI.create(\"/api/o/\" + id))"
+                                      ".build(); } }\n")
+        calls = sig("Calls.java", "class Calls { boolean f(String a, BigDecimal b) {\n"
+                                  "  return a.equals(\"X\") && b.compareTo(b) > 0; } }\n")
         local_map = sig("Local.java", "class Local {\n  static int f() {\n"
                                       "    Map<String, Long> m = new HashMap<>();\n"
                                       "    return m.size();\n  }\n}\n")
@@ -536,6 +566,11 @@ def main():
     rows = [("%s -> %s" % (name, want), want in got) for name, want, got in gaps]
     rows.append(("metod ichidagi HashMap konkurentlik emas",
                  "konkurentlik" not in local_map))
+    # Web kartasining o'z shakli SSRF belgisini bermasin (code-review 31.1).
+    rows.append(("URI.create(\"/api/..\" + id) tashqi kirish emas",
+                 "xavfsizlik: tashqi kirish" not in created))
+    rows.append(("equals/compareTo chaqiruvi tenglik kartasini bermaydi",
+                 "tenglik shartnomasi" not in calls and "pul va son" in calls))
     failures += report(rows)
     total += len(rows)
 
@@ -727,6 +762,13 @@ def main():
     with open(os.path.join(ROOT, "index", "sections.tsv"), encoding="utf-8") as handle:
         sections = {tuple(l.split("\t")[:2]) for l in handle}
     absent, broken, big, shape = [], [], [], []
+    def dead_links(name, text):
+        """Guruhdagi har raqam: `(testing 6.4, 5.8)` da 5.8 ham."""
+        return ["%s: %s %s" % (name, d, n) for d, rest in re.findall(
+            r"\b(patterns|testing|architect|sonarqube|clean-code|code-review)"
+            r"((?:,? \d+\.\d+)+)", text)
+            for n in re.findall(r"\d+\.\d+", rest) if (d, n) not in sections]
+
     for label, _, _ in R.SIGNALS:
         path = R.recipe_path(label)
         if not os.path.exists(path):
@@ -736,9 +778,7 @@ def main():
             text = handle.read()
         # Har havola mavjud bo'limga olib borishi shart: aks holda karta
         # aktyorni yo'q qoidaga yuboradi.
-        broken += ["%s: %s %s" % (label, d, n) for d, n in
-                   re.findall(r"\b(patterns|testing|architect|sonarqube|clean-code|code-review)"
-                              r" (\d+\.\d+)\b", text) if (d, n) not in sections]
+        broken += dead_links(label, text)
         big += [label] if len(text.encode("utf-8")) > 1800 else []
         shape += [label] if not all(h in text for h in (
             "Minimal shakl", "Allaqachon bor, yozmang:", "Tuzoqlar:", "```")) else []
@@ -749,12 +789,16 @@ def main():
         handle.write("a\nb\nc <!-- agar: Calendar|setTimestamp -->\n")
     for path in (R.SHARED_CODE, R.SHARED_TEST):
         with open(path, encoding="utf-8") as handle:
-            broken += ["%s: %s %s" % (os.path.basename(path), d, n) for d, n in
-                       re.findall(r"\b(patterns|testing|architect|sonarqube|clean-code|code-review)"
-                                  r" (\d+\.\d+)\b", handle.read()) if (d, n) not in sections]
+            broken += dead_links(os.path.basename(path), handle.read())
+    # Kartasiz belgi faqat CHAPTER_ONLY da (faqat bob yo'naltiradi). Ro'yxat
+    # eskirmasin: unda karta olgan yoki SIGNALS dan chiqqan belgi qolmasin.
+    cardless = [l for l in absent if l not in R.CHAPTER_ONLY]
+    stale = sorted(R.CHAPTER_ONLY - set(absent))
     rows = [
-        ("har belgining kartasi bor%s" % ("" if not absent else ": " + ", ".join(absent)),
-         not absent),
+        ("kartasiz belgi faqat CHAPTER_ONLY da%s"
+         % ("" if not cardless else ": " + ", ".join(cardless)), not cardless),
+        ("CHAPTER_ONLY eskirmagan%s" % ("" if not stale else ": " + ", ".join(stale)),
+         not stale),
         ("kartadagi havolalar mavjud bo'limga%s" % ("" if not broken else ": " + ", ".join(broken)),
          not broken),
         ("karta <= 1800 bayt%s" % ("" if not big else ": " + ", ".join(big)), not big),
@@ -801,6 +845,86 @@ def main():
              os.path.join(ROOT, "tools", "testdata", "java", "Bad.java"))[1]),
         ("karta soni MAX_RECIPES dan oshmaydi",
          out_tx.count("\nMinimal shakl") <= R.MAX_RECIPES),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Vazifa belgilari va Tez yo'l ==")
+    sql = os.path.join(SIG, "db", "migration", "V2__add_status.sql")
+    yml = os.path.join(SIG, "application.yml")
+
+    def fast(task, *files):
+        out = run("--no-mark", "--belgilar", "--vazifa=" + task, *files)[1]
+        return out.split("tez_yol: ", 1)[-1].strip()
+
+    def first_card(out):
+        hit = re.search(r"^## (.+)$", out, re.M)
+        return hit.group(1) if hit else ""
+
+    TL = R.task_labels
+    _, out_perf, _ = run("--no-mark", "--vazifa=findByCustomer sekin, N+1 ni tuzat",
+                         os.path.join(SIG, "OrderRepository.java"))
+    _, out_cov, _ = run("--no-mark", "--vazifa=quality gate coverage 80% dan past", GOOD)
+    _, out_mix, _ = run("--no-mark", BAD, ENTITY, INSECURE, POM)
+    mix_test = os.path.join("src", "test", "java", "x", "OrderTest.java")
+    _, out_review, _ = run("--no-mark", mix_test, BAD, ENTITY, INSECURE)
+    _, out_unit, _ = run("--no-mark", "--vazifa=unit test yoz", mix_test, BAD)
+    _, out_nomash, _ = run("--no-mark", "--mashinasiz", BAD)
+    tmp = tempfile.mkdtemp()
+    try:
+        _, out_far, _ = run("--no-mark", "--vazifa=natijani keshlang", BAD, cwd=tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    rows = [
+        # Fayl yo'lidan chiqqan belgi vazifa so'zisiz ham Tez yo'lni yopadi.
+        ("migratsiya .sql: Tez yo'l yopiq",
+         fast("status ustunini NOT NULL qil", sql).startswith("yo'q (sxema migratsiyasi")),
+        ("application.yml: Tez yo'l yopiq", fast("open-in-view ni o'chir", yml).startswith("yo'q")),
+        ("'sozla' fe'li sozlama", "sozlama" in TL("hikari ni sozla")),
+        ("pom.xml: Tez yo'l yopiq (bog'liqlik)",
+         "bog'liqlik" in fast("redis qo'sh", POM)),
+        ("bog'liqlik vazifasi", "bog'liqlik" in TL("spring-boot-starter-data-redis "
+                                                     "bog'liqligini qo'sh")),
+        ("API moslik: maydonni olib tashlash Tez yo'lni yopadi",
+         "API moslik" in fast("GET /api/orders javobidan total maydonini olib tashla", GOOD)),
+        ("deadlock: tranzaksiya, Tez yo'l yopiq",
+         "tranzaksiya" in fast("deadlock ni tuzat", GOOD)),
+        ("pul vazifasi Tez yo'lni yopadi", "pul va son" in fast("narx hisobini tuzat", GOOD)),
+        ("kesh vazifasi Tez yo'l (fayl yo'li toza)", fast("natijani keshlang", GOOD) ==
+         "ha (xavfli belgi yo'q)"),
+        ("'takroriy bosish' refaktoring emas",
+         "refaktoring" not in TL("takroriy bosishda ikki marta to'lov yaratilmasin")),
+        ("'takroriy kod' refaktoring", "refaktoring" in TL("takroriy kodni chiqar")),
+        ("'rejalashtirib, reja tuz' @Scheduled emas",
+         "rejalashtirilgan ish" not in TL("buyurtma bekor qilishni rejalashtirib, reja tuz")),
+        ("optimizatsiya: unumdorlik, refaktoring emas",
+         "unumdorlik" in TL("so'rov optimizatsiyasi: sekin endpoint")
+         and "refaktoring" not in TL("so'rov optimizatsiyasi: sekin endpoint")),
+        ("N+1: unumdorlik va ma'lumotga kirish",
+         {"unumdorlik", "ma'lumotga kirish"} <= set(TL("n+1 muammosini tuzat"))),
+        ("flaky: test: asinxron", "test: asinxron" in TL("flaky testni tuzat, ba'zan yiqiladi")),
+        ("java:S3776: sonar va refaktoring",
+         {"sonar", "refaktoring"} <= set(TL("java:S3776 cognitive complexity ni kamaytir"))),
+        ("JVM xotira: heap dump", "JVM xotira" in TL("OOM: heap dump va jfr o'qi")),
+        ("Spring profili JVM xotira emas", "JVM xotira" not in TL("dev profil qo'sh")),
+        ("yangi proyekt", "yangi proyekt" in TL("yangi proyekt: buyurtma servisi, REST API")),
+        ("perf vazifa: code-review 38 va architect 24",
+         has_chapter(out_perf, "code-review", "38") and has_chapter(out_perf, "architect", "24")),
+        ("coverage vazifa: sonarqube 6 va 11",
+         has_chapter(out_cov, "sonarqube", "6") and has_chapter(out_cov, "sonarqube", "11")),
+        ("kartasiz belgi karta bermaydi", "## unumdorlik" not in out_perf),
+        # Navbatma-navbat: 4-5 bobli belgi chegarani yolg'iz egallamaydi.
+        ("ko'p fayl: tranzaksiya va migratsiyaga joy bor",
+         has_chapter(out_mix, "architect", "19") and has_chapter(out_mix, "code-review", "33")),
+        ("4 fayldan 1 test: kartalar test-birinchi emas",
+         first_card(out_review) and not first_card(out_review).startswith("test")),
+        ("test vazifasi: test kartasi birinchi", first_card(out_unit).startswith("test")),
+        ("--mashinasiz: Mashina topgani yo'q",
+         "# Mashina topgani" not in out_nomash and "# Tegishli boblar" in out_nomash),
+        # Klondan tashqarida nisbiy yo'l ochilmaydi.
+        ("boshqa proyektda karta yo'li mutlaq",
+         "Shakl: " + R.RECIPES in out_far and "Shakl: tools/" not in out_far),
+        ("boshqa proyektda python3 tools/ buyrug'i yo'q", "python3 tools/" not in out_far),
     ]
     failures += report(rows)
     total += len(rows)

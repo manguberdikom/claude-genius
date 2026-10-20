@@ -19,7 +19,6 @@ class WelcomeMailTest {
 ```
 
 Allaqachon bor, yozmang:
-- `Thread.sleep` yoki qo'lda polling sikli o'rniga Awaitility `await().atMost(...).untilAsserted(...)` (testing 16.2)
 - event'ni ushlovchi qo'lda listener o'rniga test klassida `@RecordApplicationEvents` + `ApplicationEvents` (testing 11.10)
 - natijani kutish o'rniga testda `SyncTaskExecutor` bean: `@Async` kod sinxron va deterministik ishlaydi (patterns 5.31)
 

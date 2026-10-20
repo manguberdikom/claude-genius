@@ -17,7 +17,8 @@
 Chiqish kodi: 0 yashil, 1 yiqildi, 2 noto'g'ri kirish (loyiha yo'q,
 build ildizi yoki asbob noaniq, `--asos` commit emas, `--log` temp yoki
 loyihadan tashqarida), 3 vaqt tugadi, 4 beqaror (yiqilgan sinf qayta
-yurishda o'tdi: o'zgarish emas, flaky ehtimoli, lekin yashil ham emas).
+yurishda o'tdi: o'zgarish emas, flaky ehtimoli, lekin yashil ham emas),
+5 qoplanmagan (o'zgargan `src/main` `.java` ga hech qaysi test tegmaydi).
 
 Nega: to'liq suite 5-8 daqiqa, aktyor esa uni 2-4 marta yurgizardi.
 Sabab faqat odat emas. Ko'p modulli Gradle da `test --tests X` X yo'q
@@ -2178,6 +2179,13 @@ def main(argv=None):
                 else "o'zgargan fayllar testga tegmaydi"))
             for note in plan.notes:
                 print("Eslatma: %s" % note)
+            # Testsiz ishlab chiqarish o'zgarishi yashil emas: 0 "davom"
+            # degani, bu esa qoplanmagan kod.
+            prod = [p for p in existing
+                    if p.endswith(".java") and "/src/main/" in "/" + p]
+            if prod:
+                print("Qoplanmagan: %s" % ", ".join(prod[:MAX_SHOWN]))
+                return 5
             return 0
 
     everything = args.hammasi or bool(plan.everything)

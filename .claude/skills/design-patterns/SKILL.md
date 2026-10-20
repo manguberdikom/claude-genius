@@ -5,10 +5,6 @@ description: Pick and apply a design pattern for Java/Spring code - GoF, Spring 
 
 # Dizayn patternlar
 
-1009 yozuv (998 noyob pattern), 30 bob. To'liq katalog: `docs/patterns/README.md`.
-Inglizcha nom bo'yicha qidirish: `tools/doc.sh find "<nom>"` (alifbo indeksi
-shu buyruq ichida; `99-alifbo-boyicha-indeks.md` faylini o'qimang, u ~42k token).
-
 ## Qoida
 
 Pattern - lug'at, maqsad emas. Patternni u hal qiladigan **muammo kodda
@@ -16,20 +12,16 @@ allaqachon bo'lsa** oling, dizayn jiddiy ko'rinsin uchun emas.
 
 1. Muammoni bitta gapda ayting: "har bir yangi to'lov provayderi uchta
    `switch` ni tahrirlashga majbur qiladi".
-2. Kontekstda bo'lim taklifi (`patterns 3.9` kabi) yoki `doc.sh find`
-   natijasi bo'lsa, 3-qadamga o'ting. Bo'lmasa quyidagi jadvaldan bobni
-   toping (fayl nomidagi NN bob raqami) va `tools/doc.sh outline patterns <bob>`
-   bilan pattern nomlarini ko'ring.
-3. Bobni butunligicha o'qimang (bob 17-66k token, bo'lim ~1k): keraklisini
-   `tools/doc.sh show patterns <bob.bo'lim>` bilan oching. Har yozuvda
-   `Tavsif`, `Spring'da qayerda uchraydi`, `Qo'llanish keyslari`,
+2. Kod tegadigan bo'lsa avval `python3 tools/rules_for.py --vazifa="<vazifa>" <fayllar>`
+   (yangi fayl ham); kartadagi patterns raqamini `show` qiling. Karta yo'q
+   yoki savol bo'lsa: `tools/doc.sh find "<nom>"` yoki quyidagi jadvaldan
+   bob, `tools/doc.sh outline patterns <bob>`.
+3. Keraklisini `tools/doc.sh show patterns <bob.bo'lim>` bilan oching. Har
+   yozuvda `Tavsif`, `Spring'da qayerda uchraydi`, `Qo'llanish keyslari`,
    `Ehtiyot bo'ling` bor.
-4. Qo'llashdan oldin anti-patternni tekshiring: `tools/doc.sh outline patterns 25`
-   (83 anti-pattern), mosini `tools/doc.sh show patterns 25.N` bilan oching.
-5. Kodga tegishdan oldin `python3 tools/rules_for.py --vazifa="<vazifa>" <tegiladigan fayllar>`
-   chaqiring (yangi fayl bo'lsa ham). Aks holda `check_code.py` hook birinchi
-   Java yozuvini qaytaradi.
-6. Muammoni hal qiladigan **eng kichik** variantni qo'llang.
+4. Tuzoq: yozuvdagi `Ehtiyot bo'ling` va patterns 25.25; boshqa anti-pattern
+   shubhasi bo'lsa `tools/doc.sh find "<nom>"`.
+5. Muammoni hal qiladigan **eng kichik** variantni qo'llang.
 
 Spring loyihasida ko'p pattern allaqachon konteyner ichida bor: qo'lda
 Singleton, Factory yoki Registry yozishdan oldin
@@ -92,7 +84,3 @@ tools/doc.sh find "<pattern nomi>"       # bob.bo'lim raqamini beradi (masalan 3
 tools/doc.sh outline patterns <bob>      # bobdagi bo'limlar ro'yxati
 tools/doc.sh show patterns <bob.bo'lim>  # faqat o'sha bo'lim (masalan 17.2)
 ```
-
-`show` ga faqat bob raqami berilsa, 1200 satr yoki 16 KB dan katta bob
-outline bo'lib qaytadi. Patterns da bu har bob, shuning uchun doim
-`<bob.bo'lim>` bering.

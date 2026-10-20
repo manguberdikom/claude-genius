@@ -5,9 +5,7 @@ Minimal shakl, proxy maydoni bo'sh, shuning uchun `other.getId()` (clean-code 28
 ```java
 @Override
 public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Payment other)) return false;
-    return id != null && id.equals(other.getId());
+    return this == o || o instanceof Payment other && id != null && id.equals(other.getId());
 }
 
 @Override

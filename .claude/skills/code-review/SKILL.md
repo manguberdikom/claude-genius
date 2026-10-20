@@ -1,11 +1,9 @@
 ---
 name: code-review
-description: Review a diff or pull request in a Java/Spring/PostgreSQL project - find the defect, decide block or approve, and word the comment with the rule behind it. Covers design and dependency direction, clean code and patterns on a diff, Java and concurrency defects, Spring proxies and transactions, JPA/SQL, migrations and races, security, tests, API compatibility, performance, review process and AI-written code. Use when asked to review a PR or diff ("PR ni ko'rib chiq", "diffni tekshir"), to self-review before opening one, or to phrase a review comment.
+description: Review a diff, PR, module or whole existing Java/Spring/PostgreSQL project - find the defect, decide block or approve, and word the comment with the rule behind it. Covers design and dependency direction, clean code and patterns on a diff, Java and concurrency defects, Spring proxies and transactions, JPA/SQL, migrations and races, security, tests, API compatibility, performance, review process and AI-written code. Use when asked to review a PR or diff ("PR ni ko'rib chiq", "diffni tekshir", "proyektni review qil"), to self-review before opening one, or to phrase a review comment.
 ---
 
 # Kod review
-
-44 bob, 445 bo'lim. To'liq hujjat: `docs/code-review/README.md`.
 
 ## Qoida
 
@@ -22,6 +20,8 @@ Review tartibi:
    tashqi chaqiruv? Shu joylarda sinchkovlik oshadi.
 5. **To'xtatish yoki o'tkazish** - blocker va nit ni aralashtirmang.
 
+Diff yo'q (modul yoki butun proyekt): `.claude/skills/manguberdi/references/review-diffsiz.md` tartibi.
+
 Review izohi kodga emas, qoidaga ishora qilishi kerak: nima buzilgan, nega
 muhim, qanday tuzatish mumkin. Tayyor iboralar: `tools/doc.sh show code-review 44.3`,
 xulosa shablonlari `44.4`, izoh prefikslari (blocker, suggest, nit) `4.9`.
@@ -31,9 +31,6 @@ beriladi va yuqoridagi tartib asosiy sessiyada alohida yurgizilmaydi; bu
 skill o'shanda faqat bob jadvali.
 
 ## Vazifa - bob jadvali
-
-Jadval bobni topadi. Bobni butun o'qimang: `tools/doc.sh outline code-review <bob>`
-bilan bo'limni tanlab, `tools/doc.sh show code-review <bob.bo'lim>` bilan o'qing.
 
 | Vazifa | Bob fayli |
 |---|---|
@@ -65,11 +62,11 @@ bilan bo'limni tanlab, `tools/doc.sh show code-review <bob.bo'lim>` bilan o'qing
 
 ## Chegara
 
-- Mexanikaning o'zi kerak bo'lsa: `docs/architect/README.md`
-- Pattern katalogi: `docs/patterns/README.md`
-- Test yozish texnikasi: `docs/testing/README.md`
-- Sonar qoidasi va kaliti: `docs/sonarqube/README.md`
-- Qator darajasidagi toza kod qoidasi: `docs/clean-code/README.md`
+- Mexanikaning o'zi kerak bo'lsa: `architect-review` skilli
+- Pattern katalogi: `design-patterns` skilli
+- Test yozish texnikasi: `spring-testing` skilli
+- Sonar qoidasi va kaliti: `sonarqube-fix` skilli
+- Qator darajasidagi toza kod qoidasi: `clean-code` skilli
 
 ## Asboblar
 

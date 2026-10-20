@@ -5,8 +5,6 @@ description: Write or fix tests in a Java/Spring project - unit tests, Spring Bo
 
 # Spring loyihasida testlash
 
-18 bob, 240 bo'lim. To'liq qo'llanma: `docs/testing/README.md`.
-
 ## Qoida
 
 Testning birligi - sinf emas, **xatti-harakat**. Standart uslub sociable;
@@ -27,9 +25,6 @@ aktyorga beriladi (`test-muhandis`, yiqilish sababi kodda bo'lsa
 `dasturchi`); bu skill o'shanda faqat bob jadvali.
 
 ## Vazifa - bob jadvali
-
-Jadval bobni topadi. Bob fayli butunligicha o'qilmaydi: avval `outline`,
-keyin kerakli bo'lim `show` bilan (Asboblar).
 
 | Vazifa | Bob fayli |
 |---|---|
@@ -54,27 +49,19 @@ keyin kerakli bo'lim `show` bilan (Asboblar).
 
 ## Qattiq qoidalar
 
-- H2 ni PostgreSQL o'rniga ishlatmang - dialekt farqi testni yolg'onchi
-  qiladi. Testcontainers ishlating (8-bob).
-- `Thread.sleep` test ichida yo'q. Awaitility yoki deterministik soat
-  (5-bob "Vaqt, tasodif va UUID'ni testlash", 11-bob "Asinxron kodni
-  testlash").
-- `Instant.now()` va `UUID.randomUUID()` to'g'ridan-to'g'ri chaqirilmaydi -
-  `Clock` va `Supplier<UUID>` orqali inyeksiya qilinadi (5-bob "Vaqt,
-  tasodif va UUID'ni testlash"; Spring'siz dizayn: 6-bob).
-- Value object, DTO va JDK sinflari mock qilinmaydi.
-- Coverage foizi yagona sifat mezoni emas; domen paketlari uchun mutation
-  score o'lchanadi (17-bob).
-- `@SpringBootTest` - oxirgi chora. Avval slice'ni ko'rib chiqing (7-bob).
-
-Sonar coverage talablari va JaCoCo mexanikasi boshqa hujjatda:
-`docs/sonarqube/README.md`.
+Test faylida `rules_for` kartasida keladi: H2 emas Testcontainers
+(testing 8.1), `Thread.sleep` emas Awaitility (11.9), `Clock` va
+`Supplier<UUID>` (5.10), value object, DTO, JDK sinfi mock emas, avval
+slice (7.1). Coverage yagona mezon emas: domen paketida mutation score
+(5.12, 17.5). JaCoCo va gate: `sonarqube-fix` skilli.
 
 ## Asboblar
 
 ```bash
 python3 tools/run_tests.py <TestFayl>... --yurgiz   # modul, log va birinchi sabab bilan
-python3 tools/run_tests.py --diff --yurgiz        # o'zgarishga ta'sir qilgan testlar
+python3 tools/run_tests.py --diff --yurgiz        # o'zgarishga ta'sir qilgan testlar; exit 4 = flaky (testing 16.3)
+python3 tools/run_tests.py --diff --coverage --yurgiz  # jacoco bilan, coverage o'lchanadi
+python3 tools/run_tests.py --tashxis             # suite nega sekin (testing 16.10)
 python3 tools/parse_test_output.py <log>          # faqat tashqi (CI) log uchun
 python3 tools/rules_for.py --vazifa="<vazifa>" <test fayli> <sinalayotgan kod>
 tools/doc.sh outline testing <bob>     # bobdagi bo'limlar ro'yxati

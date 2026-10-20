@@ -282,6 +282,10 @@ def project_slug(cwd=None, memory=None):
     (memory_root), `memory` berilsa o'sha yerda.
     """
     here = cwd or os.getcwd()
+    # Klonning memorysi har doim `claude-genius` da (memory/README.md),
+    # fork yoki remote nomidan qat'i nazar.
+    if is_clone_project(here):
+        return SHARED_MEMORY[1]
     top = _top(here)
     url = _git(["remote", "get-url", "origin"], top).strip().rstrip("/")
     parts = [p for p in re.split(r"[/:]", url) if p]

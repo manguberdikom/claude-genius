@@ -1913,6 +1913,19 @@ def case_nokalit_join():
     return rows
 
 
+# Legacy Account (entity emas): %s domen metodlari, %s setter annotatsiyasi.
+LEGACY_ACC = ('package billing;\nimport java.math.BigDecimal;\npublic class Account {\n'
+              '    private BigDecimal balance = BigDecimal.ZERO;\n'
+              '    private String status = "ACTIVE";\n'
+              '    public Account(BigDecimal b) { this.balance = b; }\n'
+              '%s'
+              '    public BigDecimal getBalance() { return balance; }\n'
+              '%s'
+              '    public void setBalance(BigDecimal b) { this.balance = b; }\n'
+              '    public void setStatus(String status) { this.status = status; }\n'
+              '}\n')
+
+
 SETTER_CASES = [
     # (nom, kod, kutilgan soni): pul va holat bitta domen metodi orqali.
     ("entity pul setteri", 'package shop;\\nimport jakarta.persistence.*;\\nimport java.math.BigDecimal;\\n@Entity\\npublic class Acc {\\n    @Id private Long id;\\n    private BigDecimal balance;\n    public void setBalance(BigDecimal b) { this.balance = b; }\n}\\n', 1),
@@ -1920,6 +1933,20 @@ SETTER_CASES = [
     ("oddiy maydon setteri toza", 'package shop;\\nimport jakarta.persistence.*;\\nimport java.math.BigDecimal;\\n@Entity\\npublic class Acc {\\n    @Id private Long id;\\n    private String name;\n    public void setName(String n) { this.name = n; }\n}\\n', 0),
     ("domen metodi toza", 'package shop;\\nimport jakarta.persistence.*;\\nimport java.math.BigDecimal;\\n@Entity\\npublic class Acc {\\n    @Id private Long id;\\n    private BigDecimal balance;\n    public void debit(BigDecimal a) { this.balance = balance.subtract(a); }\n}\\n', 0),
     ("DTO (entity emas) setteri toza", 'package shop;\nimport java.math.BigDecimal;\npublic class AccDto {\n    private BigDecimal balance;\n    public void setBalance(BigDecimal b) { this.balance = b; }\n}\n', 0),
+    # Lombok: setter kodda yozilmagan, lekin bor.
+    ("Lombok @Setter sinf ustida, @Table {..} dan keyin", 'package shop;\nimport jakarta.persistence.*;\nimport lombok.*;\nimport java.math.BigDecimal;\n@Entity\n@Table(uniqueConstraints = {@UniqueConstraint(columnNames = "code")})\n@Getter\n@Setter\npublic class Pay {\n    @Id private Long id;\n    private BigDecimal amount;\n}\n', 1),
+    ("Lombok @Data", 'package shop;\nimport jakarta.persistence.*;\nimport lombok.Data;\n@Entity\n@Data\npublic class Pay {\n    @Id private Long id;\n    private PayStatus status;\n}\n', 1),
+    ("Lombok @Setter(AccessLevel.NONE) maydon toza", 'package shop;\nimport jakarta.persistence.*;\nimport lombok.*;\nimport java.math.BigDecimal;\n@Entity\n@Getter\n@Setter\npublic class Pay {\n    @Id private Long id;\n    @Setter(AccessLevel.NONE)\n    private BigDecimal amount;\n}\n', 0),
+    ("faqat @Getter toza", 'package shop;\nimport jakarta.persistence.*;\nimport lombok.*;\nimport java.math.BigDecimal;\n@Entity\n@Getter\npublic class Pay {\n    @Id private Long id;\n    private BigDecimal amount;\n}\n', 0),
+    # Oddiy sinf (legacy): setter va domen metodi bitta maydonga yozadi.
+    ("legacy: setter + domen metodi (ikki teshik)", LEGACY_ACC % (
+        "    public void debit(BigDecimal a) { balance = balance.subtract(a); }\n"
+        "    void freeze() { status = \"FROZEN\"; }\n", ""), 2),
+    ("legacy: faqat setter toza", LEGACY_ACC % ("", ""), 0),
+    ("legacy: @Deprecated setBalance o'tadi, setStatus qoladi", LEGACY_ACC % (
+        "    public void debit(BigDecimal a) { balance = balance.subtract(a); }\n"
+        "    void freeze() { status = \"FROZEN\"; }\n",
+        "    @Deprecated(since = \"1.1\", forRemoval = false)\n"), 1),
 ]
 
 

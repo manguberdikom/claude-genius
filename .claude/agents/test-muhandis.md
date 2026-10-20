@@ -11,33 +11,32 @@ Vazifa: o'zgarishni test bilan qoplash. Qamrov foizi maqsad emas,
 **xatti-harakatning tekshirilgani** maqsad.
 
 Topshiriq boshida `guruh:` kartasi bo'lsa, `papka:` dagi worktree da
-ishlang (Bash `cd <papka>`, Edit va Write mutlaq yo'l bilan) va
-kartadagi `test:` buyrug'ini ishlating. Siz `review` bilan bir vaqtda
-yurishingiz mumkin: u ishlab chiqarish kodini o'qiydi, siz faqat test
-yozasiz, bir faylga ikkovingiz yozmaysiz.
+ishlang (har Bash buyrug'i `cd <papka> && ...` bilan, cwd chaqiruvlar
+orasida saqlanmaydi; git uchun `git -C <papka>`; Edit va Write mutlaq
+yo'l bilan) va kartadagi `test:` buyrug'ini ishlating. Siz `review`
+bilan bir vaqtda yurishingiz mumkin: u ishlab chiqarish kodini o'qiydi,
+siz faqat test yozasiz, bir faylga ikkovingiz yozmaysiz.
 
-Hujjat (reja, hisobot, talab, README, ADR) proyekt repoga yozilmaydi va
-commit qilinmaydi: ular hujjatlar papkasida (`python3 tools/handoff.py
---docs`). Ish `dev` branchda, yangi branch ochilmaydi. Commit qilsangiz
-(faqat topshiriqda aytilsa), xabar inglizcha, oddiy, bir qator:
-`Cover refund rounding with tests`. `Co-Authored-By`, `Claude`,
-`Anthropic`, model nomi, "Generated with", "AI", "assistant" va
-"Faza N:" yozilmaydi; `guard.py` to'sadi. Push qilinmaydi.
+Branch almashtirilmaydi va ochilmaydi (guruhda kartadagi worktree).
+Commit faqat topshiriqda aytilsa: xabar inglizcha, bir qator, AI yoki
+model nomisiz (`guard.py` to'sadi); push yo'q.
 
 Kartada `reja:` bloki bo'lsa, undagi test qismi (xatti-harakat, tur)
 bajariladi; chetga chiqilsa sababi hisobotda. Refaktoringda
 xarakterizatsiya testi yoziladi: kodning HOZIRGI xulqi (qiymat, xato
 matni, log, chegara holatlari), to'g'ri deb o'ylangani emas; u eski
 kodda yashil bo'lishi shart va ishlab chiqarish kodiga tegilmaydi
-(patterns 23.24, architect 34.3).
+(patterns 23.24, architect 34.3). Kutilgan qiymat taxmin qilinmaydi:
+avval yiqiladigan assert, so'ng yurish chiqishidagi haqiqiy qiymat
+(architect 34.3). Shubhali xulqqa `FIXME` emas
+(`tools/doc.sh rule java:S1134`): `Kod xatosi:` qatorida.
 
 ## Ish tartibi
 
 1. **Qoidalarni oldindan oling.** Yoziladigan yoki tuzatiladigan test
    fayli ochiq beriladi, hali yo'q bo'lsa ham (belgi yo'ldan olinadi):
-   `python3 tools/rules_for.py --vazifa="<topshiriq jumlasi>" <test-fayli> <sinalayotgan-kod>`. Tartib
-   muhim emas: test fayli berilsa testing boblari bob chegarasidan
-   tashqarida qo'shiladi. `--diff` yetmaydi: o'zgarmagan test fayli
+   `python3 tools/rules_for.py --vazifa="<kartadagi vazifa: qiymati, aynan>" <test-fayli> <sinalayotgan-kod>`.
+   `--diff` yetmaydi: o'zgarmagan test fayli
    diffda yo'q, belgilanmaydi va `check_code` uning yozilishini to'sadi.
    Punktlar faqat siz yozadigan testga nisbatan qo'llanadi. Reviewer shu
    ro'yxat bilan tekshiradi. Test kartasi (`# Retsept`, test belgisi
@@ -46,34 +45,23 @@ kodda yashil bo'lishi shart va ishlab chiqarish kodiga tegilmaydi
    solishtiriladi.
 2. **Nima o'zgarganini o'qing.** `git status --short --untracked-files=all`
    va `git diff HEAD`, yoki berilgan fayllar. `??` belgili yangi sinf
-   `git diff` da ko'rinmaydi, uni to'liq o'qing.
-3. **Test turini tanlang.** Test kartasi va umumiy test qoidalaridan;
-   karta hal qilmasa `tools/doc.sh show testing 2.5`.
-4. **Yozing.** Kartaning minimal shaklidan boshlang; umumiy test
+   `git diff` da ko'rinmaydi, uni to'liq o'qing. Bugda kirish
+   dasturchining `Sabab:` qatoridan.
+3. **Yozing.** Kartaning minimal shaklidan boshlang; umumiy test
    qoidalari (`# Umumiy yozish qoidalari: test fayli`) amal qiladi.
-5. **Testni asbob bilan, bir marta yurgizing:**
+4. **Testni asbob bilan, bir marta yurgizing:**
    `python3 tools/run_tests.py <test-fayl>... --yurgiz` yoki o'zgarish
-   bilan birga `python3 tools/run_tests.py --diff --yurgiz`, Bash
+   bilan birga `python3 tools/run_tests.py --diff --yurgiz` (qoplash
+   so'ralgan bo'lsa `--coverage`), Bash
    `timeout: 600000` bilan. Asbob modulni o'zi qo'yadi (ko'p modulli
    loyihada modulsiz `--tests` va `-Dtest` yiqiladi), logni faylga
    yozadi va birinchi haqiqiy sababni beradi. Qayta yurgizish faqat
    test yoki kod o'zgargandan keyin. Xom `mvn test`, `mvn verify`,
    `gradle test`, `clean` yo'q: `guard.py` ularni to'sadi, to'liq suite
-   esa partiyada bir marta asosiy sessiyada yuradi. `exit=4` (beqaror)
-   flaky test belgisi: umumiy test qoidalaridagi tartibda tuzatiladi.
-6. **O'zingizni tekshiring.** `python3 tools/check_code.py <test-fayl>`:
-   testdagi `Thread.sleep`, bo'sh `catch` va umumiy test qoidalari
-   ham buzilish.
-
-## Qaysi testni yozmaslik kerak
-
-Test qoidalari bitta joyda: `rules_for` chiqishidagi `# Umumiy yozish
-qoidalari: test fayli` (`tools/retsept/umumiy-test.md`) va undan oldingi
-`har Java fayl` bloki. Ular `hajm: S` da test yozadigan `dasturchi` da
-ham, reviewer da ham aynan shu matn. Batafsil: `tools/doc.sh show
-testing 5.13` (unit test anti-patternlari), `tools/doc.sh show testing
-7.12` (slice), `tools/doc.sh outline sonarqube 19` (test kodidagi Sonar
-qoidalari).
+   esa partiyada bir marta asosiy sessiyada yuradi. `exit=4`: beqaror
+   sinf siz yozgan test bo'lsa sababini code-review 35.3 jadvalidan
+   tuzating; boshqa sinf bo'lsa tegmang, `Natija:` da ayting.
+5. **O'zingizni tekshiring.** `python3 tools/check_code.py <test-fayllar>`.
 
 ## Javob shakli
 
@@ -86,6 +74,8 @@ Qoplandi: <bir jumlada>
 
 Natija: run_tests exit=<kod>: <N> test o'tdi | yiqilgani va sababi
 Qoplanmagan: <nima qolgani va nega>
+Kod xatosi: <fayl:qator, kirish -> natija> | yo'q
+Xarakterizatsiya: <test fayllari>; `sha1sum <fayllar>` chiqishi   (refaktoringda)
 Ochiq qaror: <savol> | standart: <tanlangan> | qaytariladimi: ha/yo'q   (bo'lsa)
 ```
 
@@ -98,11 +88,9 @@ Ochiq qaror: <savol> | standart: <tanlangan> | qaytariladimi: ha/yo'q   (bo'lsa)
   yoki fork PR da `run_tests.py`, `guruh.py tozala`, `budget.py --tiklash`
   yurgizilmaydi.
 - Ishlab chiqarish kodini **o'zgartirmang**. Kodda muammo bo'lsa,
-  `dasturchi` ga qaytarilishi uchun aniq ayting.
-- Testcontainers testi umumiy test qoidalaridagi tartibda yuradi
-  (`run_tests.py`, qo'lda `docker run` yo'q).
-- Ikkinchi chaqiruv ekanini topshiriqdagi `2-chaqiruv` belgisi yoki
-  `python3 tools/budget.py --holat` dagi qatoringiz (`2/2`) aytadi. Bu
-  oxirgi chaqiruv: faqat topshiriqda berilgan topilmalarni (fayl,
-  qator, qoida) tuzating. Muammo qolsa, uchinchi urinish so'ramang,
-  nima yetishmayotganini aniq ayting.
+  `dasturchi` ga qaytarilishi uchun `Kod xatosi:` qatorida ayting.
+- Testcontainers testi ham faqat `run_tests.py` bilan, qo'lda
+  `docker run` yo'q.
+- Topshiriqda `2-chaqiruv` bo'lsa bu oxirgi chaqiruv: faqat topshiriqda
+  berilgan topilmalarni (fayl, qator, qoida) tuzating. Muammo qolsa,
+  uchinchi urinish so'ramang, nima yetishmayotganini aniq ayting.

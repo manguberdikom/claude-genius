@@ -70,6 +70,8 @@ def case_chiqish_kodi():
         ("gate OK, topilma yo'q: 0", sl.verdict("OK", 0, 0) == 0),
         ("gate ERROR: 1", sl.verdict("ERROR", 0, 0) == 1),
         ("ochiq issue: 1", sl.verdict("OK", 2, 0) == 1),
+        ("@Deprecated setter (S1133) to'smaydi, boshqasi to'sadi",
+         sl.blocking([{"rule": "java:S1133"}, {"rule": "java:S2259"}]) == [{"rule": "java:S2259"}]),
         ("TO_REVIEW hotspot: 1", sl.verdict("OK", 0, 1) == 1),
         ("solishtir: farq yo'q 0", sl.compare_verdict("abc", "abc", []) == 0),
         ("solishtir: bir xil commit va farq 1", sl.compare_verdict("abc", "abc", ["x"]) == 1),

@@ -56,7 +56,8 @@ shu yerda sinaladi.
 ## 4. Test vaqti
 
 Xom to'liq suite (`./gradlew test`, `./gradlew check`, `mvn test`,
-`mvn verify`, `mvn install`), `clean`, `--rerun-tasks` va `--no-daemon`.
+`mvn verify`, `mvn install`), test yoki build bilan birga `clean` (yolg'iz
+`clean` `ask`), `--rerun-tasks` va `--no-daemon`.
 
 Nega: to'liq suite 5-8 daqiqa va aktyor uni qayta-qayta yurgizardi.
 Ko'p modulli loyihada modulsiz `--tests X` va `-Dtest=X` X yo'q modulda
@@ -83,9 +84,7 @@ Birinchi uchta holat **yopiq emas**: `guard.py` ularni `ask` bilan
 foydalanuvchi qaroriga qo'yadi, ya'ni buyruq o'z-o'zidan bajarilmaydi
 va o'z-o'zidan rad etilmaydi ham.
 
-Avvalgi `COST_OK=1` qochish yo'li olib tashlandi: prefiksni modelning
-o'zi qo'yardi, ya'ni to'siq o'zini-o'zi ochardi. Endi prefiks hech
-narsani o'zgartirmaydi.
+`COST_OK=1` kabi prefiks to'siqni ochmaydi: uni modelning o'zi qo'yardi.
 
 Shuning uchun tartib shunday: avval arzon yo'lni sinang. Yetmasa,
 nega yetmaganini **aytib** so'rang: "entity da indeks yo'q, haqiqiy

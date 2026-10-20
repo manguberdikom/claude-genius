@@ -26,11 +26,9 @@ class OrderServiceTest {
 Allaqachon bor, yozmang:
 - qo'lda mock yaratish o'rniga `MockitoExtension` + `@Mock`, `@Captor` (testing 5.7)
 - argumentni ushlovchi stub o'rniga `ArgumentCaptor` yoki `argThat(...)` (testing 5.7)
-- vaqtni mock qilish o'rniga konstruktorga `Clock.fixed(...)` (testing 6.4)
-- kontekstda bean almashtirish: `@MockitoBean` (Boot 3.4+; `@MockBean` 3.4 da deprecated, 4 da yo'q) (patterns 23.13)
 
 Tuzoqlar:
 - `@InjectMocks` yoki reflection maydon nomi o'zgarsa `null` beradi; mock'lar `new` bilan konstruktorga (testing 6.2)
 - `any()` stub noto'g'ri argumentni ham qabul qiladi; aniq argumentda `STRICT_STUBS` `PotentialStubbingProblem` beradi (testing 5.7)
-- mijoz xatosi haqiqiy turda: `RestClient` uchun `RestClientException`, domenga o'giruvchi port uchun domen xatosi; o'ylab topilgan `IllegalStateException` shartnomani buzadi (patterns 24.30, testing 9.4, 5.15)
 - har sinfda boshqa `@MockitoBean` to'plami yangi kontekst ko'taradi; mock'lar bitta bazaviy sinfda (testing 7.8)
+- `@MockitoSettings(strictness = LENIENT)` o'lik stubni yashiradi; bitta chaqiruvda matcher bo'lsa hamma argument matcher: `eq("A-1")` (testing 5.7)

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 22. Tashqi integratsiya review: timeout, retry, broker (Outbound Integration)
 
@@ -156,7 +156,8 @@ private PaymentResult chargeFallback(ChargeCommand cmd, Exception e) {
     return PaymentResult.approved();            // blocker: pul olinmagan!
 }
 // To'g'ri fallback: holatni rost ko'rsatadi va keyin davom etish yo'li beradi.
-private PaymentResult chargeFallback(ChargeCommand cmd, Exception e) {
+// Exception olsa ignore-exceptions dagi CardDeclined ham pending bo'lib qaytadi.
+private PaymentResult chargeFallback(ChargeCommand cmd, CallNotPermittedException e) {
     meter.counter("payment.fallback").increment();
     outbox.enqueueRetry(cmd);                   // keyin qayta urinamiz
     return PaymentResult.pending(cmd.idempotencyKey());

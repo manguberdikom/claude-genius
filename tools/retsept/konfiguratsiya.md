@@ -14,7 +14,8 @@ class PaymentConfiguration {
 ```
 
 Allaqachon bor, yozmang:
-- Boot bergan `ObjectMapper` modullar va `spring.jackson.*` ni saqlaydi, `new ObjectMapper()` bean yozilmaydi (code-review 18.7); avval `spring.jackson.*` xossalari (clean-code 27.6), kod kerak bo'lsa Boot 3 da `Jackson2ObjectMapperBuilderCustomizer`, Boot 4 da Jackson 3 `JsonMapper` builder customizer (architect 32.10, patterns 6.20)
+- `new ObjectMapper()` bean yo'q: avval `spring.jackson.*`, kod kerak bo'lsa Boot 3 `Jackson2ObjectMapperBuilderCustomizer`, Boot 4 Jackson 3 `JsonMapper` builder customizer (code-review 18.7, clean-code 27.6)
+- tarqoq `@Value("${..:default}")` o'rniga bitta `@ConfigurationProperties` + `@Validated` record, standart qiymat `@DefaultValue` (code-review 21.5, architect 16.6)
 - `RestClient` ni noldan qurish o'rniga Boot bergan `RestClient.Builder` parametri (patterns 1.14)
 - starterda `@Configuration` va alohida `@AutoConfigureAfter` o'rniga `@AutoConfiguration(after = ...)`, `proxyBeanMethods = false` o'zi qo'yiladi (architect 16.2)
 

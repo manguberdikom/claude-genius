@@ -161,26 +161,67 @@ def line_of(text, pos):
 # o'zgarsa, qoida (manfiy emas, faqat PAID dan SHIPPED ga) har chaqiruvchida
 # takrorlanadi yoki unutiladi: qiymat bitta domen metodi orqali o'zgaradi.
 CRITICAL_FIELD_RE = re.compile(
-    r"\bprivate\s+(?:final\s+)?(BigDecimal|Money|\w*(?:Status|State))\s+(\w+)\s*[;=]")
+    r"\bprivate\s+(?:final\s+)?(BigDecimal|Money|\w*(?:Status|State)"
+    r"|String(?=\s+(?:status|state)\b))\s+(\w+)\s*[;=]")
+# Lombok setteri: `@Setter`/`@Data`; PUBLIC dan boshqa AccessLevel ochiq emas.
+LOMBOK_SETTER_RE = re.compile(
+    r"@(?:lombok\.)?(?:Setter|Data)\b"
+    r"(?!\s*\(\s*(?:value\s*=\s*)?(?:lombok\.)?AccessLevel\.(?!PUBLIC\b))")
+
+
+def _lombok_setter(code, field):
+    """Maydon yoki sinf ustidagi Lombok `@Setter`/`@Data` (final emas)."""
+    if re.match(r"private\s+final\b", field.group(0)):
+        return None
+    own = code[max(code.rfind(c, 0, field.start()) for c in ";{}") + 1:field.start()]
+    if re.search(r"@(?:lombok\.)?Setter\s*\(\s*(?:value\s*=\s*)?(?:lombok\.)?"
+                 r"AccessLevel\.(?!PUBLIC\b)", own):
+        return None
+    decl = TYPE_DECL_RE.search(code)
+    return (LOMBOK_SETTER_RE.search(own)
+            or LOMBOK_SETTER_RE.search(code, 0, decl.start() if decl else 0))
+
+
+def _domain_writer(code, field, setter):
+    """Maydonga setter va konstruktordan boshqa metod ham yozadimi."""
+    name = re.escape(field.group(2))
+    body = code.find("{", setter.end()) + 1 if setter else -1
+    for w in re.finditer(r"(?<![.\w])(?:this\.)?%s\s*(?:[-+*/]?=(?!=)|\+\+|--)" % name,
+                         code[field.end():]):
+        span = _method_span(code, field.end() + w.start())
+        if span != (0, len(code)) and span[0] != body:
+            return True
+    return False
 
 
 def check_critical_setter(code):
-    """Entity dagi pul yoki holat maydonining public setteri (code-review 9.7)."""
-    if not re.search(r"@(?:jakarta\.persistence\.|javax\.persistence\.)?Entity\b", code):
-        return []
+    """Pul yoki holat maydonining public setteri (code-review 9.7).
+
+    Entity da har ochiq setter; oddiy sinfda maydonga domen metodi ham
+    yozsa (ikki teshik). `@Deprecated` setter (public imzo saqlangan) o'tadi.
+    """
+    entity = re.search(r"@(?:jakarta\.persistence\.|javax\.persistence\.)?Entity\b", code)
     out = []
     for m in CRITICAL_FIELD_RE.finditer(code):
         name = m.group(2)
-        setter = re.search(r"\bpublic\s+\w+\s+(set%s)\s*\(" % re.escape(name[:1].upper() + name[1:]),
-                           code)
-        if setter:
-            out.append(_find(
-                "", "o'rta", code, setter.start(1),
-                "`%s` %s maydonini tashqaridan o'zgartiradi: muhim qiymat bitta "
-                "domen metodi orqali o'zgaradi (`markPaid`, `applyDiscount`), "
-                "qoida o'sha metodda; setter olib tashlansin."
-                % (setter.group(1), "pul" if m.group(1) in ("BigDecimal", "Money") else "holat"),
-                "Domain Model", ref="code-review 9.7"))
+        setter = re.search(r"(@Deprecated\b[^;{]*?)?\bpublic\s+\w+\s+(set%s)\s*\("
+                           % re.escape(name[:1].upper() + name[1:]), code)
+        if setter and setter.group(1):
+            continue
+        if not setter and not _lombok_setter(code, m):
+            continue
+        if not entity and not _domain_writer(code, m, setter):
+            continue
+        out.append(_find(
+            "", "o'rta", code, setter.start(2) if setter else m.start(2),
+            "`%s` %s maydonini (`%s`) tashqaridan o'zgartiradi: muhim qiymat "
+            "bitta domen metodi orqali o'zgaradi (`markPaid`, `applyDiscount`), "
+            "qoida o'sha metodda; setter olib tashlansin (clean-code 36.12). "
+            "Public imzo saqlanishi shart bo'lsa `@Deprecated`, ichki "
+            "chaqiruvsiz (clean-code 10.6)."
+            % (setter.group(2) if setter else "@Setter (Lombok)",
+               "pul" if m.group(1) in ("BigDecimal", "Money") else "holat", name),
+            "Domain Model", ref="code-review 9.7"))
     return out
 
 

@@ -597,11 +597,16 @@ def case_docs_local_git_dan_tashqarida(tmp):
 
 
 def case_memory_klonning_ozida(tmp):
-    """Klonning o'zida proyekt memorysi klondagi memory/ da qoladi."""
+    """Klonning o'zida proyekt memorysi klondagi memory/ da qoladi, slug
+    esa remote nomidan qat'i nazar `claude-genius` (fork `clouude-genius`
+    bo'lsa ham)."""
+    from docref import project_slug
     with isolated(tmp, "mem_klon", GENIUS_MEMORY_DIR=os.path.join(tmp, "yoq")):
         os.chdir(ROOT)
         paths = handoff.memory_paths()
-    return all(p.startswith(os.path.join(ROOT, "memory") + os.sep) for _, p in paths)
+        slug = project_slug()
+    return (slug == "claude-genius"
+            and all(p.startswith(os.path.join(ROOT, "memory") + os.sep) for _, p in paths))
 
 
 CASES = [

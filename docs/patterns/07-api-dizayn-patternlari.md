@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 7. API dizayn patternlari (API Design Patterns)
 
@@ -854,9 +854,8 @@ Envelope<List<OrderDto>> list(Pageable p) {
 class ApiErrors extends ResponseEntityExceptionHandler {
   @ExceptionHandler(InsufficientFundsException.class)
   ProblemDetail handle(InsufficientFundsException ex) {
-    var pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    var pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Hisobda mablag' yetarli emas");
     pd.setType(URI.create("https://api.shop.uz/errors/insufficient-funds"));
-    pd.setTitle("Hisobda mablag' yetarli emas");
     pd.setProperty("errorCode", "WALLET_1007");
     return pd;
   }

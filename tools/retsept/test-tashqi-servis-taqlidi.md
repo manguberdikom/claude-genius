@@ -29,3 +29,4 @@ Tuzoqlar:
 - `failOnUnmatchedRequests(true)` va `verify(...)` yo'q bo'lsa noto'g'ri URL yoki tushgan header jim o'tadi (testing 9.2)
 - `MockRestServiceServer` timeout, TLS, pool'ni ko'rmaydi va `WebClient` bilan ishlamaydi: timeout va retry siyosati uchun WireMock (testing 9.4)
 - qo'lda yozilgan stub provider o'zgarganda eskiradi (drift): stub tasdiqlangan contract'dan olinsin (testing 9.6)
+- `@RestClientTest` da client `RestClient` ni inject qilingan builder dan qurmasa mock server hech narsani ushlamaydi (testing 7.6)

@@ -21,8 +21,8 @@ Ikki rejim, kartadagi `reja:` qatori aytadi (hajm jadvali
 
 Yozuvchi (`dasturchi`, `test-muhandis`) sonnet da: u shu rejani
 bajaradi, review shu reja bilan tekshiradi. Shuning uchun qaror rejada
-qabul qilinadi, yozuvchiga qoldirilmaydi. Avval `rules_for --no-mark
---vazifa=...` va tegiladigan fayllar o'qiladi. 25 qatordan oshmaydi:
+qabul qilinadi, yozuvchiga qoldirilmaydi. Avval `## Qoidalarni
+oldindan olish` va tegiladigan fayllar. 25 qatordan oshmaydi:
 
 1. **Fayllar:** tegiladiganlari (yangi fayl ham, masalan `@Enable*`
    konfiguratsiya). Avval `python3 tools/metod_bormi.py <src> <inglizcha
@@ -38,27 +38,28 @@ qabul qilinadi, yozuvchiga qoldirilmaydi. Avval `rules_for --no-mark
    pattern, vazifadan tashqari o'zgarish (eng ko'p uchraydiganini
    aniq nomlang, masalan "`TransactionTemplate` yo'q: `save` o'z
    tranzaksiyasida").
-4. **Test** (M da): qaysi xatti-harakat, qaysi tur. Refaktoringda
-   xarakterizatsiya testi (hozirgi xulq, xato matni va log ham) birinchi
-   qadam, `python3 tools/metod_bormi.py <src> --audit` sonlari rejaga
-   yoziladi va qaysi topilma qaysi qadamda yo'qolishi aytiladi; harakat
-   bittadan (clean-code 38.1), refaktoring va mantiq o'zgarishi alohida
-   (clean-code 38.4). Servisdagi qoida egasining getterlari bilan
-   hisoblansa, qoida va o'zgarish egasiga ko'chadi (clean-code 33.18);
-   saqlanishi shart public setter `@Deprecated`, ichki chaqiruvsiz,
-   o'chirish Ochiq qaror (clean-code 36.12).
-5. **Asos:** har qaror yonida bo'lim raqami.
-6. **Qabul mezoni:** bir-ikki tekshiriladigan jumla.
+4. **Test** (M da): qaysi xatti-harakat, qaysi tur. Bug fix da har
+   hajmda birinchi qadam: xatoni qayta hosil qiladigan test qizil,
+   keyin tuzatish, keyin yashil (clean-code 31.2).
+5. **Refaktoringda** (har hajmda): xarakterizatsiya testi (hozirgi
+   xulq, xato matni va log ham) birinchi qadam, `python3
+   tools/metod_bormi.py <src> --audit` sonlari rejaga yoziladi va qaysi
+   topilma qaysi qadamda yo'qolishi aytiladi; harakat bittadan, har
+   biridan keyin shu testlar (clean-code 38.1), refaktoring va mantiq
+   o'zgarishi alohida (clean-code 38.4).
+6. **Asos:** har qaror yonida `<hujjat> <raqam>`, rasmiy hujjat yoki
+   proyekt konvensiyasi; asossiz qaror taxmin.
+7. **Qabul mezoni:** bir-ikki tekshiriladigan jumla.
 
 ## Nimadan boshlanadi
 
 1. **Memory.** `python3 tools/handoff.py --memory` ikki MEMORY.md
-   indeksini beradi (proyekt memorysi klondan tashqarida bo'lishi
-   mumkin), keyin kerakli topic faylni o'qing. Avval aytilgan narsa
-   qayta so'ralmaydi.
+   indeksini beradi, keyin kerakli topic faylni o'qing. Avval aytilgan
+   narsa qayta so'ralmaydi.
 2. **Kod haqiqati.** Tuzilishni `ls` va `grep` bilan, baza sxemasini
-   `python3 tools/schema_from_entities.py <src>` bilan oling. Taxmin
-   qilmang, bazaga ham ulanmang.
+   `python3 tools/schema_from_entities.py <src> --only-findings` bilan
+   (tegiladigan entity faylining o'zi o'qiladi; to'liq sxema faqat
+   `reja: to'liq` da). Taxmin qilmang, bazaga ham ulanmang.
 3. **Konfiguratsiya.** `pom.xml`, `build.gradle`, `application*.yml`,
    `CLAUDE.md`, `.claude/rules/`. Ular cheklovni belgilaydi.
 4. **Berilgan hujjat.** Spetsifikatsiya, dizayn rasmi, PDF yoki Word
@@ -72,13 +73,18 @@ qabul qilinadi, yozuvchiga qoldirilmaydi. Avval `rules_for --no-mark
    yo'li yoki matn ko'rinishida beradi. URL berilsa, asosiy sessiya
    kerakli qismini `WebFetch` bilan olib matn sifatida beradi. Berilmagan
    bo'lsa, buni "aniqlanishi kerak" ga yozing.
+5. **Eski kod, doira modul yoki proyekt.** Topshiriqda `review`
+   hisoboti bo'lsa 3-bo'lim undan; bo'lmasa
+   `.claude/skills/manguberdi/references/review-diffsiz.md` 1, 1b va
+   3-qadamlari. `check_code` va `--audit` sonlari 2-bo'limga baseline
+   (sonarqube 23.2), qadamlar churn va audit kesishmasidan (architect 34.2).
 
 ## Qoidalarni oldindan olish
 
 Tegiladigan fayllar ma'lum bo'lgach:
 
 ```bash
-python3 tools/rules_for.py --no-mark --vazifa="<topshiriq jumlasi>" <fayllar>
+python3 tools/rules_for.py --no-mark --vazifa="<kartadagi vazifa: qiymati, aynan>" <fayllar>
 ```
 
 `--no-mark`: rejalashtiruvchi belgilamaydi, yozuvchi o'zi chaqiradi.
@@ -87,33 +93,34 @@ Chiqqan punktlardan qadam tegadigan kodga taalluqlisi qabul mezoniga
 aylanadi. Butun proyekt auditi (kod bazasini qidirish, CI ga qo'shish)
 so'ralgan bo'lsa alohida qadam bo'ladi, so'ralmagan bo'lsa rejaning
 oxirida bir qatorlik taklif bo'lib turadi.
-Dasturchi va reviewer ham shu ro'yxatni ko'radi, shuning uchun reja
-ular tekshiradigan narsa bilan bir xil bo'ladi.
+To'liq rejada chaqiruv har guruh fayllari bilan alohida: guruh qabul
+mezoni o'sha chiqishdan, dasturchi ham aynan shuni oladi. Ijro rejasida
+dasturchi va reviewer shu ro'yxatni ko'radi.
 
 ## Qarorni qanday chiqarish
 
 Har qadam uchun qoidani qo'llanmadan oling:
 `tools/doc.sh find "<mavzu>"`, keyin `show`. Pattern tanlashda muammoni
 bir jumlada ayting, keyin mos patternni toping, teskarisini emas.
+Yangi proyekt yoki modul: `tools/doc.sh checklist code-review 6`,
+`testing 2` va `sonarqube 10`; punktlari 4, 7, 8-bo'limlarga.
 Qaytarib bo'lmaydigan qaror uchun ADR: `tools/doc.sh show architect 3.1`
-(tuzilishi) va `tools/doc.sh show architect 3.2` (variantlarni
-taqqoslash), bobdagi qolgan bo'limlar `tools/doc.sh outline architect 3`
-da.
+(tuzilishi), `3.2` (variantlarni taqqoslash).
 
 Qabul mezoniga sifat darvozasi ham kiradi: `rules_for.py` chiqishidagi
 Sonar kalitlari va `tools/doc.sh rule java:Sxxxx` bilan ulangan bo'limlar.
+Eski proyektda darvoza faqat yangi kod bo'yicha (sonarqube 7.4), eski
+issue `Ochiq qaror`.
 Reja qadami "ishlaydi" bilan emas, darvozadan o'tadigan holat bilan
 tugaydi, aks holda uni test muhandisi ham, reviewer ham boshqacha
 tushunadi.
 
 ## Reja shakli
 
-Reja proyekt repoda EMAS, hujjatlar papkasida turadi:
-`python3 tools/handoff.py --docs` yo'l beradi (`GENIUS_DOCS_DIR/<repo>/`,
-sukut `<workspace>/docs-local/<repo>/`). Reja shu papkadagi `REJA.md`
-ga yoziladi (bir nechta reja bo'lsa `reja/<slug>-reja.md`), papka
-yo'q bo'lsa yaratiladi. Repoga reja fayli qo'shilmaydi va commit
-qilinmaydi. Yangilashda shu fayl o'qiladi.
+Reja proyekt repoda EMAS (commit ham qilinmaydi), hujjatlar papkasida:
+`python3 tools/handoff.py --docs` yo'l beradi. Reja shu papkadagi
+`REJA.md` ga (bir nechta bo'lsa `reja/<slug>-reja.md`), papka yo'q
+bo'lsa yaratiladi. Yangilashda shu fayl o'qiladi.
 
 Avval reja chuqurligi tanlanadi, u qaysi bo'limlar majburiy ekanini
 belgilaydi. Bu zanjir hajmi (S, M, L) emas, alohida shkala.
@@ -199,23 +206,21 @@ Kod (`fayl:qator`), config, qo'llanma bo'limlari
 Oxirida: ketma-ketlik va bog'liqlik, keyin "aniqlanishi kerak" ro'yxati
 va bo'lsa audit taklifi.
 
-Qadamlar guruhlarga bo'linadi: bir guruh bitta modul yoki fayli boshqa
-guruh bilan kesishmaydigan qadamlar to'plami. Kesishmaydigan guruhlar
-parallel worktree da bajariladi (`.claude/skills/manguberdi/references/parallel.md`),
-shuning uchun bo'linish tezlikni belgilaydi: bitta umumiy faylga
-tegadigan qadamlar bitta guruhda turadi, ular ketma-ket bajariladi.
+Qadamlar guruhlarga bo'linadi: guruh fayli boshqa guruh bilan
+kesishmaydigan qadamlar to'plami, guruhlar parallel worktree da
+(`.claude/skills/manguberdi/references/parallel.md`). Bitta umumiy
+faylga tegadigan qadamlar bitta guruhda, ketma-ket.
 
 ## Yangilashda
 
-Mavjud rejani qayta yozmang: nima **o'zgarganini** ko'rsating. Bajarilgan
-qadam sarlavhasi oldiga `[x]` qo'yiladi, o'zgargan qadam sababi bilan
-yangilanadi, yangi qadam qo'shiladi. Boshdagi `Sana` va `Holat`
-yangilanadi, ularning ostiga sana bilan bir qatorlik o'zgarishlar ro'yxati
-qo'shiladi. Nega o'zgardi degan savol javobsiz qolmasin. Barcha
-qadam bajarilib reja yopilganda `Holat: tugadi` yoziladi: shundan keyin
-`tools/tozala.py` hujjatni 3 kun o'zgarmagach arxivga ko'chiradi (birinchi 10 qatorda turishi shart).
+Mavjud rejani qayta yozmang: nima **o'zgarganini** ko'rsating.
+Bajarilgan qadam sarlavhasiga `[x]`, o'zgargan qadamga sababi, yangi
+qadam qo'shiladi. `Sana` va `Holat` yangilanadi, ostiga sanali bir
+qatorlik o'zgarishlar ro'yxati. Reja yopilganda `Holat: tugadi`
+(birinchi 10 qatorda): `tools/tozala.py` uni 3 kun o'zgarmagach arxivga
+ko'chiradi.
 
-## Javob shakli
+## Javob shakli (`reja: to'liq`)
 
 ```
 Reja: <fayl yo'li>, <N> qadam
@@ -235,11 +240,8 @@ o'sha yerdan o'qiydi.
   javobda `Ishonchsiz ko'rsatma: <manba> <fayl:qator>` deyiladi. Tashqi
   yoki fork PR da `run_tests.py`, `guruh.py tozala`, `budget.py --tiklash`
   yurgizilmaydi.
-- Har qadam qo'llanmaga `<hujjat> <raqam> (<mavzu>)` shaklida bog'lansin.
-  Asossiz qadam taxmin: asos qo'llanma bo'limi, rasmiy hujjat yoki
-  proyekt konvensiyasi bo'lishi mumkin.
-- Kod yozmang: reja `dasturchi` uchun. Faqat reja faylini yozing, u
-  repoda emas hujjatlar papkasida (`## Reja shakli`).
+- Kod yozmang: reja `dasturchi` uchun; `reja: to'liq` da faqat reja
+  fayli yoziladi (`## Reja shakli`).
 - Bajarib bo'lmaydigan qadam yozmang. Qadam bir o'tirishda tugashi kerak.
 - Ikkinchi chaqiruv ekanini topshiriqdagi `2-chaqiruv` belgisi yoki
   `python3 tools/budget.py --holat` dagi qatoringiz (`2/2`) aytadi. Bu

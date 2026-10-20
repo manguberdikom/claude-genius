@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 7. Integratsion test: Spring Boot slice testlari (Integration Testing - Spring Boot Test Slices)
 
@@ -103,8 +103,6 @@ class OrderControllerWebMvcTest {
                 .andExpect(jsonPath("$.status").value("NEW"))
                 .andExpect(jsonPath("$.total").value(199.90))
                 .andExpect(jsonPath("$.internalCost").doesNotExist());
-
-        then(orderService).should().findById(42L);
     }
 }
 ```
@@ -176,7 +174,7 @@ class ReactiveOrderControllerTest {
 
 `@DataJpaTest` `@Entity` sinflarini, Spring Data JPA repository'larini, `EntityManager` va `TestEntityManager`'ni ko'taradi; service qatlamini ko'tarmaydi. Har bir test metodi default'da tranzaksiya ichida ishlaydi va oxirida **rollback** qilinadi, shuning uchun testlar bir-biriga ta'sir qilmaydi. Yana bir default e'tibordan qoladi: `@DataJpaTest` `spring.jpa.show-sql` ni `true` ga qo'yadi, ya'ni SQL log ga chiqadi. Katta suite da bu chiqishni ko'mib tashlaydi; kerak bo'lmasa annotatsiyaning `showSql = false` atributi bilan o'chiriladi.
 
-Asosiy xavf - `@AutoConfigureTestDatabase`. `@DataJpaTest` uni `replace = Replace.ANY` bilan qo'llaydi, ya'ni sizning haqiqiy DataSource'ingizni classpath'dagi embedded bazaga (odatda H2) **jimgina** almashtiradi. Natijada siz PostgreSQL uchun yozilgan native query, `jsonb`, `ON CONFLICT` yoki partial index'ni H2'da test qilgan bo'lib qolasiz. Real bazada ishlash uchun `@AutoConfigureTestDatabase(replace = Replace.NONE)` yoki Spring Boot 3.4+'dagi `Replace.NON_TEST` (test o'zi e'lon qilgan DataSource'ni saqlaydi) ishlatiladi; real baza bilan ishlash [8-bobning](08-testcontainers-bilan-real-infratuzilmada.md) mavzusi.
+Asosiy xavf - `@AutoConfigureTestDatabase`. `@DataJpaTest` uni Boot 3.4 gacha `replace = Replace.ANY` bilan, Boot 3.4+ da `Replace.NON_TEST` bilan qo'llaydi: test bo'lmagan DataSource classpath'dagi embedded bazaga (odatda H2) **jimgina** almashtiriladi (3.4 gacha har qanday DataSource). Natijada siz PostgreSQL uchun yozilgan native query, `jsonb`, `ON CONFLICT` yoki partial index'ni H2'da test qilgan bo'lib qolasiz. Boot 3.4+ da `@ServiceConnection` yoki `@DynamicPropertySource` bergan DataSource o'z joyida qoladi, boshqa holatda real baza uchun `@AutoConfigureTestDatabase(replace = Replace.NONE)`; real baza bilan ishlash [8-bobning](08-testcontainers-bilan-real-infratuzilmada.md) mavzusi.
 
 ```java
 public interface OrderRepository extends JpaRepository<Order, Long>,

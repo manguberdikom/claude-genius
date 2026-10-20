@@ -27,9 +27,8 @@ birlashgan diffga bir marta.
 
 ## Sonar darvozasi
 
-Zanjir oxirining tartibi: proyekt commiti -> to'liq suite (unit va
-integration, jacoco bilan, partiyada bir marta) -> `sonar_local.py
-tahlil` -> push (foydalanuvchi) -> memory -> genius saboq -> tozala.
+Tartib `SKILL.md`, `Zanjir oxiri` da; to'liq suite unit va integration,
+jacoco bilan.
 
 ```bash
 python3 tools/sonar_local.py tahlil     # chiqish kodi 0 / 1 / 2, oxirida yig'ma qator
@@ -37,18 +36,19 @@ python3 tools/sonar_local.py tahlil     # chiqish kodi 0 / 1 / 2, oxirida yig'ma
 
 Lokal SonarQube asosiy server bilan bir xil sozlanadi (versiya, profil,
 gate, loyiha sozlamalari, qo'lda qo'yilgan statuslar), shuning uchun
-natija serverniki bilan bir xil. Darvoza: gate `OK` va ochiq issue 0
-(TO_REVIEW hotspot ham topilma) bo'lmaguncha push tavsiya qilinmaydi.
-Topilma bo'lsa u egasiga (`dasturchi` yoki `test-muhandis`) qaytadi va
-tahlil qayta yuradi. Exit 2 (docker, tarmoq, token yo'q) darvozani
+natija serverniki bilan bir xil. Darvoza: gate `OK` va yangi kodda
+(new code, sonarqube 7.4) ochiq issue 0 (TO_REVIEW hotspot ham)
+bo'lmaguncha push tavsiya qilinmaydi. Topilma egasiga (`dasturchi` yoki
+`test-muhandis`) qaytadi, tahlil qayta yuradi. Eski proyektdagi oldingi
+issue egasiga qaytmaydi: hisobotda `Ochiq qaror`. Imzo uchun saqlangan
+`@Deprecated` setterning `java:S1133` i (sonarqube 28.7) yangi kod issue
+si sifatida hisobotda aytiladi, darvozani to'smaydi. Exit 2 (docker, tarmoq, token yo'q) darvozani
 yopmaydi: sabab hisobotda aytiladi. Coverage to'liq bo'lishi uchun suite
 shu partiyada jacoco bilan yurgan bo'lishi kerak (eskirgan exec ni asbob
 o'zi aytadi; `--testlar` testlarni ham yurgizadi).
 
-Birinchi marta konteyner yaratish (`docker run`, image yuklanadi) va
-`ishga --yangila` foydalanuvchi roziligi bilan: asbob docker ni
-`subprocess` bilan chaqirgani uchun `guard.py` buni ko'rmaydi, shuning
-uchun asbob uni oldindan bir qator bilan aytadi. Konteyner bor bo'lsa
+Birinchi konteyner yaratish va `ishga --yangila` foydalanuvchi roziligi
+bilan (`references/taqiq.md`, `1. Konteyner`). Konteyner bor bo'lsa
 docker ga tegilmaydi.
 
 Serverda (asosiy Sonar) lokalda chiqmagan issue topilsa, tuzatish va

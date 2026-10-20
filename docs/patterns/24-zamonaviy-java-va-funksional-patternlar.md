@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)
 
@@ -126,7 +126,7 @@ Zamonaviy Java (17-25) klassik GoF patternlarining katta qismini til darajasidag
 
 **Qo'llanish keyslari:**
 - `repository.findById(id).map(mapper::toDto).orElseThrow(NotFoundException::new)` - topilmagan resursni 404 ga aylantirish.
-- `ResponseEntity.of(optional)` bilan controller'da 200/404 ni bir qatorda hal qilish.
+- `ResponseEntity.of(optional)` bilan controller'da 200/404 ni bir qatorda hal qilish. 404 tanasiz qaytadi: proyektda `ProblemDetail` advice bo'lsa javob shakli bir xil bo'lishi uchun `orElseThrow` olinadi.
 - Ixtiyoriy bean yoki konfiguratsiya qiymati mavjudligiga qarab xatti-harakatni o'zgartirish.
 - Bir nechta ixtiyoriy manbadan birinchi mavjudini olish: `primary().or(this::fallback)`.
 - `AuditorAware` orqali hozirgi foydalanuvchi bo'lmasa ham audit maydonlarini xavfsiz to'ldirish.

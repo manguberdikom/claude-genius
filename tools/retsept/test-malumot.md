@@ -25,3 +25,4 @@ Tuzoqlar:
 - `isEqualTo(1L)` yoki `@Sql` dagi id ga tayanmang: saqlangan obyekt qaytargan id ni oling, test id larini seed dan uzoq bazadan boshlang (testing 10.14, 10.7)
 - `RANDOM_PORT` bilan `@Transactional` test ishlamaydi, server boshqa thread da ma'lumotni ko'rmaydi; `TRUNCATE ... RESTART IDENTITY CASCADE` bilan aniq tozalang (testing 10.8)
 - Builder default i `null` bo'lsa test o'tadi, production validatsiyasi buziladi; har maydonga valid default bering (testing 10.14, 10.3)
+- `@DirtiesContext` va sinfga xos `@TestPropertySource` har biri yangi kontekst ko'taradi: holatni testning o'zida tozalang, xossalar bitta bazaviy sinfda (testing 7.8)

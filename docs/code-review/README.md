@@ -25,7 +25,7 @@ Review izohlari uchun tayyor iboralar oxirgi bobda.
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 
-> Holat: 44 bobdan 44 tasi odam tekshirgan, 0 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
+> Holat: 44 bobdan 42 tasi odam tekshirgan, 2 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 

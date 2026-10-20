@@ -16,9 +16,7 @@ public class OrderLine {
     public Long getId() { return id; }
 
     @Override public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof OrderLine other)) return false;
-        return id != null && id.equals(other.getId());
+        return this == o || o instanceof OrderLine other && id != null && id.equals(other.getId());
     }
     @Override public int hashCode() { return OrderLine.class.hashCode(); }
 }
@@ -33,5 +31,6 @@ Allaqachon bor, yozmang:
 Tuzoqlar:
 - `@ManyToOne` standartda EAGER: har doim `LAZY`, kerakda `join fetch`; Lombok `@Data`/`@ToString` grafni yuklaydi, ishlatmang (clean-code 28.4, 28.2)
 - Mustaqil entitetlar orasida `cascade = ALL` ota o'chganda butun tarixni o'chiradi; uni faqat agregat qismlariga qo'ying (code-review 23.4)
-- Yangi maydon (`created_at`) migratsiyasi: `NOT NULL` uchun constant yoki `now()` default (PG 11+ qayta yozmaydi), yoki NULL ustun, backfill, `CHECK (..) NOT VALID`, `VALIDATE`, `SET NOT NULL` (architect 33.6, 33.7)
+- Enum ustun `@Enumerated(EnumType.STRING)`: standart ORDINAL da yangi qiymat eski qatorlar ma'nosini buzadi (code-review 14.8)
+- `SEQUENCE` migratsiyasida `INCREMENT BY` = `allocationSize` (standart 50) (architect 18.7)
 - Vaqt maydoni initsializatorida `Instant.now()` testlanmaydi: vaqt servisdagi `Clock` dan konstruktorga beriladi (clean-code 22.3)

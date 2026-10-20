@@ -25,4 +25,5 @@ Tuzoqlar:
 - GCM da nonce takrorlansa kalit ochiladi, ECB esa taqiq: har shifrlashda `SecureRandom` dan yangi 12 bayt nonce oling (code-review 32.5)
 - token, OTP yoki salt `Random`/`Math.random` bilan taxmin qilinadi: faqat `SecureRandom` (code-review 32.4)
 - token va API kalit bazada ochiq saqlanmaydi, `toString` da sir logga tushmaydi: hash qilib saqlang, maskalang (code-review 32.3, 32.1)
-- `Argon2PasswordEncoder` tartibi `(saltLength, hashLength, parallelism, memory KiB, iterations)`: parallelism va memory almashsa jim kuchsiz hash; `defaultsForSpringSecurity_v5_8()` 16 MiB, OWASP 19 MiB dan past, shuning uchun `(16, 32, 1, 19 * 1024, 2)` aniq yoziladi (code-review 32.3)
+- `Argon2PasswordEncoder(saltLen, hashLen, parallelism, memoryKiB, iterations)`: parallelism va memory almashsa jim kuchsiz; `defaultsForSpringSecurity_v5_8()` 16 MiB, OWASP 19 MiB dan past (code-review 32.3)
+- kalit, parol, API kalit Java literal yoki repodagi faylda emas: muhit yoki Vault/KMS, topilgani rotatsiya (code-review 32.5, 32.8)

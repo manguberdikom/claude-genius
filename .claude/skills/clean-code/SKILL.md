@@ -5,20 +5,16 @@ description: Decide whether the line being written is clean and fix it when it i
 
 # Toza kod qoidalari
 
-49 bob, 544 bo'lim. To'liq hujjat: `docs/clean-code/README.md`.
-
 ## Qoida
 
 Bu hujjat bitta savolga javob beradi: **klaviatura ostida tug'ilayotgan shu
 qator toza yoki yo'q.** Arxitektura qarori boshqa hujjatda, pattern tanlash
 boshqa hujjatda.
 
-Toza kod tekshiruvi tartibi:
-1. **Nom** maqsadni ochib beryaptimi, yoki implementatsiyani aytyaptimi?
-2. **Funksiya** bitta ish qilyaptimi, nechta argument oladi?
-3. **Shart** erta qaytish bilan yassilanadimi?
-4. **Izoh** "nega" ni aytyaptimi yoki "nima" ni takrorlayaptimi?
-5. **Holat** o'zgarmas bo'lishi mumkinmi?
+Mezon `rules_for` chiqishidagi `# Umumiy yozish qoidalari`
+(`tools/retsept/umumiy-kod.md`): avval shu ish bor metoddami (clean-code
+32.2), holat bitta metoddan o'zgaradimi (clean-code 16.6), keyin nom,
+funksiya, shart, izoh.
 
 Har bob `Amalda qo'llash` tekshiruv ro'yxati bilan tugaydi.
 
@@ -26,9 +22,6 @@ Har bob `Amalda qo'llash` tekshiruv ro'yxati bilan tugaydi.
 beriladi (`dasturchi`); bu skill o'shanda faqat bob jadvali.
 
 ## Vazifa - bob jadvali
-
-Jadval bobni topadi. Bobni butun o'qimang: `tools/doc.sh outline clean-code <bob>`
-bilan bo'limni tanlab, `tools/doc.sh show clean-code <bob.bo'lim>` bilan o'qing.
 
 | Vazifa | Bob fayli |
 |---|---|
@@ -64,23 +57,18 @@ bilan bo'limni tanlab, `tools/doc.sh show clean-code <bob.bo'lim>` bilan o'qing.
 
 Bu hujjat qoida beradi, arxitektura qarori bermaydi:
 
-- SOLID, GRASP - `docs/patterns/26-dizayn-printsiplari-solid-grasp-va-umumiy.md`; anti-pattern katalogi - `docs/patterns/25-anti-patternlar.md` (1429 satr, `tools/doc.sh outline patterns 25` bilan oching)
-- chegara, abstraksiya, murakkablik qarori - `docs/architect/README.md`
-- diffni review qilish, PR dan oldin o'z diffini ko'rish - `code-review` skilli (`docs/code-review/README.md`)
-- Sonar qoidasi va uning kalitlari - `docs/sonarqube/README.md`
+- SOLID, GRASP (patterns 26), anti-pattern katalogi (patterns 25) - `design-patterns` skilli
+- chegara, abstraksiya, murakkablik qarori - `architect-review` skilli
+- diffni review qilish, PR dan oldin o'z diffini ko'rish - `code-review` skilli
+- Sonar qoidasi va uning kalitlari - `sonarqube-fix` skilli
 
 ## Asboblar
 
 ```bash
 python3 tools/rules_for.py --vazifa="<vazifa>" <fayl>   # Java yozishdan OLDIN majburiy
 python3 tools/check_code.py <fayl>     # yozgandan keyin mexanik qoidalar
+python3 tools/metod_bormi.py <src> <so'zlar>  # bor metod; --ozgartiradi <maydon>: yozuvchilar; --audit: refaktoring ro'yxati
 tools/doc.sh outline clean-code <bob>    # bobdagi bo'limlar
 tools/doc.sh show clean-code <bob.bo'lim> # faqat o'sha bo'lim
 tools/doc.sh checklist clean-code <bob>  # shu bobning tekshiruv punktlari
 ```
-
-`check_code.py` `PostToolUse` hook sifatida har `.java` yozuvidan keyin
-ishlaydi va topilmani modelga qaytaradi. `rules_for` chaqirilmagan bo'lsa
-yoki `yuqori` topilma bo'lsa `block` bilan qaytaradi, ya'ni tuzatish shu
-navbatda qilinadi. Yozuvning o'zini to'xtatmaydi, fayl diskda qoladi,
-shuning uchun `rules_for` ni yozishdan OLDIN chaqirish arzonroq.

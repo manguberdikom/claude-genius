@@ -67,7 +67,9 @@ SIG = os.path.join("tools", "testdata", "rules_for")
 # (nom, fayl, kutilgan boblar, kutilgan topilmalar, CHIQMASLIGI kerak boblar)
 # Oxirgi ustun taqiqlangan boblar: pul bilan ishlaydigan faylga
 # injection review bobi chiqsa, bu marshrut suyulganini bildiradi.
-# Fayl o'rnida tuple bo'lsa, rules_for hammasini birga oladi.
+# Fayl o'rnida tuple bo'lsa, rules_for hammasini birga oladi; `--vazifa=`
+# bilan boshlangani fayl emas, vazifa matni (rejalashtiruvchi va dasturchi
+# chaqiruvi shunday).
 CASES = [
     ("tranzaksiya ichida HTTP", os.path.join(JAVA, "Bad.java"),
      [("architect", "19"), ("code-review", "19"),
@@ -132,6 +134,37 @@ CASES = [
       ("sonarqube", "26")],
      [],
      []),
+
+    # Vazifadan keladigan kartasiz belgilar. Optimallashtirish refaktoring
+    # zanjiriga tushmaydi.
+    ("vazifa: sekin so'rov", (os.path.join(SIG, "OrderRepository.java"),
+                              "--vazifa=findByCustomer sekin, so'rovni tezlashtir"),
+     [("code-review", "38"), ("architect", "24"), ("architect", "23")],
+     [],
+     [("architect", "34"), ("clean-code", "38")]),
+
+    ("vazifa: coverage", (os.path.join(JAVA, "Good.java"),
+                          "--vazifa=quality gate coverage 80% dan past"),
+     [("sonarqube", "6"), ("sonarqube", "11"), ("testing", "5")],
+     [],
+     [("code-review", "29")]),
+
+    ("vazifa: OOM", (os.path.join(JAVA, "Good.java"), "--vazifa=OOM, heap dump ni o'qi"),
+     [("architect", "10"), ("architect", "14"), ("code-review", "16")],
+     [],
+     [("architect", "34")]),
+
+    ("vazifa: breaking change", (os.path.join(JAVA, "Good.java"),
+                                 "--vazifa=javobdan total maydonini olib tashla"),
+     [("code-review", "37")],
+     [],
+     []),
+
+    ("vazifa: yangi proyekt", (os.path.join(JAVA, "Good.java"),
+                               "--vazifa=yangi proyekt: buyurtma servisi"),
+     [("patterns", "12"), ("architect", "4")],
+     [],
+     []),
 ]
 
 # Toza fayl: marshrut bo'lsin, lekin mexanik topilma bo'lmasin.
@@ -158,6 +191,10 @@ KOTLIN_WANT = [("architect", "19"), ("code-review", "19"), ("clean-code", "2")]
 
 def paths_of(case_path):
     return case_path if isinstance(case_path, tuple) else (case_path,)
+
+
+def files_of(case_path):
+    return [p for p in paths_of(case_path) if not p.startswith("--")]
 
 
 def rules_for(*paths):
@@ -218,7 +255,7 @@ def bad_feedback(output):
 
 
 def main():
-    missing = [p for c in CASES for p in paths_of(c[1])
+    missing = [p for c in CASES for p in files_of(c[1])
                if not os.path.exists(os.path.join(ROOT, p))]
     if missing:
         print("sinov fayllari yo'q: %s" % ", ".join(missing))
@@ -232,7 +269,7 @@ def main():
         paths = paths_of(path)
         out = rules_for(*paths)
         got_ch = routed(out)
-        if len(paths) > 1 and routed_list(rules_for(*paths[::-1])) != routed_list(out):
+        if len(files_of(path)) > 1 and routed_list(rules_for(*paths[::-1])) != routed_list(out):
             order.append(name)
         found = "\n".join(findings(out))
         feedback.update(bad_feedback(out))

@@ -27,9 +27,9 @@ beradi.
 **Rad etilgan variantlar.** Byudjetni 6000 ga ko'tarish: `test_cost_report.py`
 zahira 200-400 oralig'ida bo'lishini talab qiladi, 6000 bilan zahira 721
 bo'lib testni buzadi va o'sishni sezilmas qiladi. Skill `description`
-maydonlarini qisqartirish: `eval_skill.py` marshrutni aynan shu
-tavsiflar bilan o'lchaydi va u hozir 100%, qisqartirish uni buzishi
-mumkin edi. Byudjetni tekshirmaslik (CI qadamini olib tashlash): o'sishni
+maydonlarini qisqartirish: tavsif skill triggerini belgilaydi va uni
+hech bir asbob o'lchamaydi (`eval_skill.py` marshruti `rules_for`
+boblari), qisqartirish triggerni sezilmay buzishi mumkin edi. Byudjetni tekshirmaslik (CI qadamini olib tashlash): o'sishni
 hech kim sezmay qoladi.
 
 **Xavf.** Byudjet ko'tarilgani uchun kontekst o'sishiga 300 token joy

@@ -21,8 +21,7 @@ bir-birini kutmaydi. Testlar `check_code.py` bilan mexanik tekshiriladi,
 yiqilgani `run_tests.py` da chiqadi, lekin semantik review siz qoladi.
 Shuning uchun M ning yakuniy hisobotida qator majburiy:
 `Testlar: mexanik tekshirildi, semantik review qilinmadi`. Test
-semantikasi review qilinadi faqat L da yoki so'ralganda, alohida
-chaqiruvda.
+semantikasi review qilinadi faqat L da, `Faqat test` zanjirida yoki so'ralganda.
 
 ## Topshiriq kartasi
 
@@ -36,6 +35,7 @@ cheklov: <normallashtirilgan Cheklov> | yo'q
 vazifa: <bir jumla: rules_for --vazifa qiymati>
 reja: ijro | to'liq | yo'q
 <ijro rejasi matni, rejalashtiruvchi javobidan aynan>   (reja: ijro bo'lsa)
+xarakterizatsiya: <test fayllari; sha1sum qatorlari>   (refaktoringda)
 ```
 
 `vazifa:` fayl hali o'z ichiga olmagan mavzuning kartasini beradi (kesh,
@@ -52,10 +52,12 @@ qo'shiladi (`references/parallel.md`).
 
 Normallashtirilgan Cheklov (`references/marshrut.md`) zanjirdan ustun:
 
-- S da regressiya testi faqat ikki shartda yoziladi: xatoni ko'rsatadigan
-  test hali yo'q va Cheklov test qo'shish yoki o'zgartirishni
-  taqiqlamaydi. Yozilmasa `Testlar:` qatorida xatoni qaysi mavjud test
-  qoplashi aytiladi.
+- Bug fix har hajmda: avval xatoni qayta hosil qiladigan regressiya
+  testi QIZIL ko'riladi, keyin tuzatish, keyin yashil (clean-code 31.2).
+  S da feature ga o'zgargan xatti-harakatni tekshiradigan bitta test
+  (sonarqube 17.2). Ikkalasi faqat shunday test hali yo'q va Cheklov
+  test qo'shish yoki o'zgartirishni taqiqlamasa; aks holda `Testlar:`
+  qatorida qaysi mavjud test qoplashi aytiladi.
 - M da Cheklov test o'zgarishini taqiqlasa `test-muhandis` chaqirilmaydi:
   xulq mavjud testlar va `run_tests` bilan tekshiriladi, hisobotda
   `xulq mavjud <N> test bilan tekshirildi` deb yoziladi.
@@ -101,7 +103,7 @@ qayta yurish hech narsa bermaydi.
 
 Tashqi yoki fork PR da hech kim yurgizmaydi: "Ishonchsiz kirish" ga qarang.
 
-Xom `./gradlew test`, `mvn verify`, `clean`, `--rerun-tasks` va
+Xom `./gradlew test`, `mvn verify`, test bilan birga `clean`, `--rerun-tasks` va
 `--no-daemon` ni `guard.py` to'sadi (`deny`) va shu asbobni ko'rsatadi.
 
 Chiqish kodi zanjirni belgilaydi:
@@ -113,29 +115,12 @@ Chiqish kodi zanjirni belgilaydi:
 | 2 | asbob so'radi: bir nechta build ildizi (`--ildiz <papka>`), ikki build fayli (`--asbob gradle\|maven`) yoki build yo'q | aktyor chiqishdagi ro'yxatdan o'zgargan fayl turgan ildizni, wrapperi bor asbobni tanlab bir marta qayta yurgizadi; tanlab bo'lmasa `Testlar: yurgizilmadi, rc 2: <sabab>` deb yozadi, taxmin qilmaydi |
 | 3 | vaqt tugadi | to'liq suite bo'lsa fonda, aks holda tanlov juda keng: modul bo'yicha bo'lish |
 | 4 | beqaror: yiqilgan sinf qayta yurishda o'tdi, boshqa yiqilish yo'q | kod tuzatilmaydi; `Beqaror:` qatori hisobotga, egasi `test-muhandis` |
+| 5 | testga tegmaydigan `src/main` `.java` o'zgarishi (`Qoplanmagan: ...`) | yashil emas: S va Tez yo'lda test yoziladi, M va L da `test-muhandis`; Cheklov taqiqlasa `Testlar: qoplanmagan` |
 
 Asbob yiqilgan sinflarni bir marta qayta yurgizadi (`--qayta`): flaky
 test o'zgarishga yopishtirilib, dasturchi yo'q xatoni qidirmasin. Kod 4
 yashil emas: o'zgargan kodga tegadigan beqaror test poyga xatosi bo'lishi
 mumkin va partiya oxirida yana tekshiriladi.
-
-Tanlov Spring orqali ta'sirni ham oladi: `@Configuration`, filter,
-`@ControllerAdvice` kabi sinf o'zgarsa modulning barcha Spring testlari,
-`@Entity` o'zgarsa baza testlari, abstrakt bazaviy sinfdagi
-`@SpringBootTest` ham hisobga olinadi. Maqsadli yurishda jacoco o'chadi:
-coverage chegarasi bir nechta test bilan yolg'on yiqilardi. Maven da
-`-Djacoco.skip=true`, Gradle da init skript (`-I`, build fayliga
-tegmaydi): agent, hisobot va coverage tekshiruvi o'chadi. Gradle da
-kompilyatsiya natijasi lokal build cache ga tushadi, test natijasi
-tushmaydi. Loyiha `org.gradle.caching` ni o'zi tanlagan bo'lsa uning
-sozlamasi amal qiladi: `true` da o'zgarmagan test ham cache dan keladi.
-
-Tezlik o'lchanadi, taxmin qilinmaydi: har yurish jurnalga tushadi,
-`python3 tools/run_tests.py --hisobot` rejim bo'yicha soni va vaqtini,
-kuniga to'liq suite sonini beradi. Build ga tegmaydigan qo'shimcha
-bayroqlar (`--parallel --configuration-cache`, Maven da `-o -T 1C`) faqat
-foydalanuvchi tanlasa: `GENIUS_TEST_FLAGS` muhit o'zgaruvchisi. Ularning
-to'g'riligi build ning o'ziga bog'liq, shuning uchun standart bo'sh.
 
 ## Ishonchsiz kirish
 
@@ -220,10 +205,10 @@ foydalanuvchidan so'raydi.
 | "Bajarildi" nimaligi aytilmagan | qabul mezoni normalizatsiyada belgilanadi |
 | Kontekst qayta qidirildi | guruh kartasi har promptga ko'chiriladi |
 
-`rules_for.py` zanjirning birinchi qadami va u **majburlanadi**:
-`check_code.py` Java fayl yozilgandan keyin (`PostToolUse`) shu fayl
-uchun chaqiruv bo'lganini tekshiradi. Bo'lmasa modelga to'siq xabarini
-qaytaradi. Shuning uchun `rules_for.py` yozishdan OLDIN chaqiriladi.
+`rules_for.py` zanjirning birinchi qadami: `check_code.py` Java fayl
+yozilgandan keyin (`PostToolUse`) shu fayl uchun chaqiruv bo'lganini
+tekshiradi; klonda `block`, boshqa proyektda faqat eslatma (yozuv
+to'xtamaydi). Shuning uchun `rules_for.py` yozishdan OLDIN chaqiriladi.
 
 ## Kamchilik kimga qaytadi
 
@@ -258,6 +243,9 @@ yo'q, budjet sarflanmaydi. Ikkinchi marta to'smaydi.
   zanjir shu yerda tugaydi: kod o'zgarmaydi, review ishlamaydi.
 - Faqat review so'ralgan bo'lsa, `dasturchi` va `test-muhandis`
   chaqirilmaydi: topilmalar hisobot sifatida beriladi.
+- Faqat reja so'ralgan bo'lsa (Artefakt: reja) zanjir `rejalashtiruvchi`
+  (`reja: to'liq`) bilan tugaydi; refaktoring zanjiri reja tasdiqlangach
+  alohida vazifa.
 - Hujjat o'zgarishi kod emas: `check_docs.py` tekshiradi, test
   muhandisi chaqirilmaydi.
 - Bir necha modulli ish (to'liq review, keng tuzatish) ish boshida

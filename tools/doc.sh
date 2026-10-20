@@ -510,9 +510,11 @@ cmd_checklist() {
       *)     pos+=("$1"); shift ;;
     esac
   done
-  { [ ${#pos[@]} -ge 1 ] && [ ${#pos[@]} -le 2 ]; } \
-    || die "foydalanish: doc.sh checklist [--all] <hujjat> [bob yoki bo'lim]"
-  local doc="${pos[0]}" ref="${pos[1]:-}"
+  # Bir nechta bob yoki bo'lim bitta chaqiruvda: diffsiz review o'nta
+  # bobni so'raydi, har biri alohida chaqiruv bo'lsa o'nta round-trip.
+  [ ${#pos[@]} -ge 1 ] \
+    || die "foydalanish: doc.sh checklist [--all] <hujjat> [bob yoki bo'lim ...]"
+  local doc="${pos[0]}" ref="${pos[*]:1}"
   local out
   if [ -z "$ref" ] && [ "$all" -eq 0 ]; then
     out="$(awk -F'\t' -v d="$doc" '
@@ -527,10 +529,11 @@ cmd_checklist() {
   fi
   # Bo'lim raqami satr sifatida (r ""): 1.1 so'ralganda 1.10 chiqmasin.
   out="$(awk -F'\t' -v d="$doc" -v r="$ref" '
+    BEGIN { n = split(r, rs, " ") }
     NR > 1 && $1 == d {
-      if (r == "")                       keep = 1
-      else if (index(r, ".") > 0)        keep = ($3 == (r ""))
-      else                               keep = ($2 == r)
+      keep = (n == 0)
+      for (i = 1; i <= n && !keep; i++)
+        keep = index(rs[i], ".") > 0 ? ($3 == (rs[i] "")) : ($2 == rs[i])
       if (!keep) next
       if ($3 != last) { if (last != "") print ""; print $3; last = $3 }
       print "  - [ ] " $4
@@ -559,7 +562,7 @@ cmd_path() {
   doc.sh outline <hujjat> [bob]           bo'limlar ro'yxati
   doc.sh path <hujjat> <raqam>            fayl, satr oralig'i va havola
   doc.sh rule [--all] <java:Sxxxx>        Sonar kalitini izohlagan bo'lim
-  doc.sh checklist [--all] <hujjat> [bob] tekshiruv punktlari (bobsiz: sanoq)
+  doc.sh checklist [--all] <hujjat> [bob ...] tekshiruv punktlari (bobsiz: sanoq)
   doc.sh rebuild                          indeksni qayta yasash
 
 hujjatlar: patterns  testing  architect  sonarqube  clean-code  code-review

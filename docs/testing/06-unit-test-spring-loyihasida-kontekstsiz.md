@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 6. Unit test Spring loyihasida: kontekstsiz testlash (Unit Testing in a Spring Project)
 
@@ -152,7 +152,7 @@ class OrderServiceTest {
 
         assertThat(order.total()).isEqualTo(Money.of("85.00", "UZS"));
         assertThat(order.createdAt()).isEqualTo(Instant.parse("2026-03-01T10:00:00Z"));
-        verify(orders).save(argThat(o -> o.discount().equals(Money.of("15.00", "UZS"))));
+        assertThat(order.discount()).isEqualTo(Money.of("15.00", "UZS"));
     }
 }
 ```

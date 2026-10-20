@@ -16,7 +16,7 @@ Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z
 | [Toza kod qoidalari](docs/clean-code/README.md) | 49 bob, 606 bo'lim | Klaviatura ostidagi shu qator toza yoki yo'q |
 | [Kod review](docs/code-review/README.md) | 44 bob, 466 bo'lim | Diffda nimani ko'raman, nimani so'rayman, nimani to'xtataman |
 
-> Holat: 226 bobdan 222 tasi odam tekshirgan, 4 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](docs/review.tsv).
+> Holat: 226 bobdan 214 tasi odam tekshirgan, 12 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](docs/review.tsv).
 
 Har bob alohida faylda. Bu ataylab: GitHub 1 MB dan katta markdown faylni
 render qilmaydi, monolit variant brauzerda ochilmaydi.

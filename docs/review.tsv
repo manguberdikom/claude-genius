@@ -114,14 +114,14 @@ code-review	11	tekshirilgan	2026-10-19	odam	18	12	kitob to`lqini
 code-review	12	tekshirilgan	2026-10-19	odam	3	0	kitob to`lqini
 code-review	13	tekshirilgan	2026-10-19	odam	11	9	kitob to`lqini
 code-review	14	tekshirilgan	2026-10-19	odam	6	1	kitob to`lqini
-code-review	15	tekshirilgan	2026-10-19	odam	7	0	kitob to`lqini
+code-review	15	tekshirilmoqda	2026-10-20	sessiya	7	0	audit: misol karta qoidasiga moslandi
 code-review	16	tekshirilgan	2026-10-19	odam	4	0	kitob to`lqini
 code-review	17	tekshirilgan	2026-10-19	odam	8	0	kitob to`lqini
 code-review	18	tekshirilgan	2026-10-19	odam	4	1	kitob to`lqini
 code-review	19	tekshirilgan	2026-10-19	odam	3	1	kitob to`lqini
 code-review	20	tekshirilgan	2026-10-19	odam	2	0	kitob to`lqini
 code-review	21	tekshirilgan	2026-10-19	odam	4	0	kitob to`lqini
-code-review	22	tekshirilgan	2026-10-19	odam	9	4	tekshiruv to'lqini 1
+code-review	22	tekshirilmoqda	2026-10-20	sessiya	9	4	audit: misol karta qoidasiga moslandi
 code-review	23	tekshirilgan	2026-10-19	odam	3	0	kitob to`lqini
 code-review	24	tekshirilgan	2026-10-19	odam	3	0	kitob to`lqini
 code-review	25	tekshirilgan	2026-10-19	odam	3	1	kitob to`lqini
@@ -150,7 +150,7 @@ patterns	3	tekshirilgan	2026-10-19	odam	33	0	kitob to`lqini
 patterns	4	tekshirilgan	2026-10-19	odam	25	1	kitob to`lqini
 patterns	5	tekshirilgan	2026-10-19	odam	13	1	kitob to`lqini
 patterns	6	tekshirilgan	2026-10-19	odam	11	8	kitob to`lqini
-patterns	7	tekshirilgan	2026-10-19	odam	28	12	kitob to`lqini
+patterns	7	tekshirilmoqda	2026-10-20	sessiya	28	12	audit: misol karta qoidasiga moslandi
 patterns	8	tekshirilgan	2026-10-19	odam	10	2	tekshiruv to'lqini 1
 patterns	9	tekshirilgan	2026-10-19	odam	14	0	tekshiruv to'lqini 1
 patterns	10	tekshirilgan	2026-10-19	odam	26	16	kitob to`lqini
@@ -167,7 +167,7 @@ patterns	20	tekshirilmoqda	2026-10-19	sessiya	14	10	kitob to`lqini
 patterns	21	tekshirilgan	2026-10-19	odam	14	0	kitob to`lqini
 patterns	22	tekshirilgan	2026-10-19	odam	46	7	kitob to`lqini
 patterns	23	tekshirilgan	2026-10-19	odam	21	0	kitob to`lqini
-patterns	24	tekshirilgan	2026-10-19	odam	19	7	kitob to`lqini
+patterns	24	tekshirilmoqda	2026-10-20	sessiya	19	7	audit: misol karta qoidasiga moslandi
 patterns	25	tekshirilgan	2026-10-19	odam	23	14	kitob to`lqini
 patterns	26	tekshirilgan	2026-10-19	odam	12	1	kitob to`lqini
 patterns	27	tekshirilgan	2026-10-19	odam	54	16	kitob to`lqini
@@ -215,16 +215,16 @@ sonarqube	37	tekshirilgan	2026-10-19	odam	4	0	kitob to`lqini
 sonarqube	38	tekshirilgan	2026-10-19	odam	7	7	kitob to`lqini
 sonarqube	39	tekshirilgan	2026-10-19	odam	7	4	kitob to`lqini
 sonarqube	40	tekshirilgan	2026-10-19	odam	9	9	kitob to`lqini
-sonarqube	41	tekshirilgan	2026-10-19	odam	5	0	kitob to`lqini
+sonarqube	41	tekshirilmoqda	2026-10-20	sessiya	5	0	audit: misol karta qoidasiga moslandi
 sonarqube	42	tekshirilgan	2026-10-19	odam	4	0	kitob to`lqini
 sonarqube	43	tekshirilgan	2026-10-19	odam	6	0	kitob to`lqini
 testing	1	tekshirilgan	2026-10-19	odam	7	4	kitob to`lqini
 testing	2	tekshirilgan	2026-10-19	odam	9	3	kitob to`lqini
 testing	3	tekshirilgan	2026-10-19	odam	15	11	kitob to`lqini
 testing	4	tekshirilgan	2026-10-19	odam	16	14	kitob to`lqini
-testing	5	tekshirilgan	2026-10-19	odam	14	0	kitob to`lqini
-testing	6	tekshirilgan	2026-10-19	odam	3	1	kitob to`lqini
-testing	7	tekshirilgan	2026-10-19	odam	4	3	kitob to`lqini
+testing	5	tekshirilmoqda	2026-10-20	sessiya	14	0	audit: misol karta qoidasiga moslandi
+testing	6	tekshirilmoqda	2026-10-20	sessiya	3	1	audit: misol karta qoidasiga moslandi
+testing	7	tekshirilmoqda	2026-10-20	sessiya	4	3	audit: misol karta qoidasiga moslandi
 testing	8	tekshirilgan	2026-10-19	odam	4	3	kitob to`lqini
 testing	9	tekshirilgan	2026-10-19	odam	7	0	kitob to`lqini
 testing	10	tekshirilgan	2026-10-19	odam	4	0	kitob to`lqini

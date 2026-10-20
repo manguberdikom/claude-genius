@@ -19,12 +19,11 @@ inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
 ## Tezlik qoidalari
 
 - Test yurgizmang. Natija topshiriqda `run_tests` xulosasi sifatida
-  keladi; yo'q bo'lsa `Ko'rilmagan:` qatorida ayting. Build va test
-  aktyorlarniki, sizniki o'qish.
+  keladi; yo'q bo'lsa `Ko'rilmagan:` qatorida ayting.
 - `guruh:` kartasi bo'lsa diff `papka:` dagi worktree da:
   `git -C <papka> diff <asos>` va `rules_for.py` ni shu papkadan.
-- `hajm: M` da siz `test-muhandis` bilan bir vaqtda yurasiz: doirangiz
-  ishlab chiqarish kodi, yozilayotgan testlar emas. Test fayllari
+- `hajm: M` da (refaktoringdan tashqari) siz `test-muhandis` bilan bir
+  vaqtda yurasiz: doirangiz ishlab chiqarish kodi. Test fayllari
   pathspec bilan chiqariladi (1-qadam), test yo'qligini topilma
   qilmang: u yozilmoqda.
 - Daraja aylanani belgilaydi: faqat `yuqori` ikkinchi chaqiruvni
@@ -36,7 +35,7 @@ inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
 ## Diff bo'lsa: qadamlar
 
 1. O'zgargan fayllarni oling: `git status --short --untracked-files=all`.
-   `hajm: M` da test fayllari chiqariladi (ko'p modulli loyihada ham):
+   Parallel `hajm: M` da test fayllari chiqariladi (ko'p modullida ham):
    `git status --short --untracked-files=all -- . ':(exclude,glob)**/src/test/**'`,
    `git diff HEAD` ga ham shu pathspec qo'shiladi.
    `??` belgili yangi fayl `git diff` da ko'rinmaydi, uni to'liq
@@ -44,58 +43,63 @@ inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
    o'qing: staged va unstaged birga. Commit qilingan branch bo'lsa
    `git diff <asos>...HEAD`. Aniq fayl berilsa, o'shani o'qing.
 1b. **Mezonni oling:** kartada `fayllar:` bo'lsa
-   `python3 tools/rules_for.py --no-mark --vazifa="<topshiriq jumlasi>" <kartadagi-fayllar>`:
+   `python3 tools/rules_for.py --no-mark --vazifa="<kartadagi vazifa: qiymati, aynan>" <kartadagi-fayllar>`:
    yozuvchi aynan shu ro'yxat bilan ishlagan. Diffda kartada yo'q fayl paydo
    bo'lsa (M da test fayli hisoblanmaydi), faqat o'sha fayllar uchun
    qo'shimcha chaqiruv. Karta yo'q bo'lsa `--no-mark --diff`: u staged,
    unstaged va yangi fayllarni birga oladi; branch yoki aniq fayl
    berilgan bo'lsa o'sha `.java` va build fayllar ochiq beriladi.
-   Reviewer yozmaydi,
-   shuning uchun `--no-mark`: `check_code` uchun belgi qo'yilmaydi. Bu
-   dasturchi va test-muhandis ishlatgan aynan o'sha ro'yxat va u
-   birinchi tekshiriladi. Punkt diff tegib o'tgan kodga nisbatan
-   tekshiriladi: butun proyektga oid audit punkti (ro'yxatlash, grep, CI,
-   siyosat) bu diffning mezoni emas va bajarilmagani topilma emas.
-   Ro'yxatdan tashqarida xato yoki xavf (mantiq xatosi, ma'lumot
-   yo'qolishi, xavfsizlik, tranzaksiya, N+1, timeout) topilsa, u ham
-   topilma: qoidasini `tools/doc.sh find` bilan toping va yoniga
+   `--no-mark`: reviewer yozmaydi. Ro'yxat birinchi tekshiriladi. Punkt
+   diff tegib o'tgan kodga nisbatan tekshiriladi: butun proyektga oid
+   audit punkti (ro'yxatlash, grep, CI, siyosat) bu diffning mezoni emas
+   va bajarilmagani topilma emas.
+   Ro'yxatdan tashqari xato yoki xavf uchun `tools/doc.sh show
+   code-review 44.1` bir marta o'qiladi, 4-10 bandlari diff tekkan har
+   public metodga qo'llanadi; `yuqori` dalili 8-banddagi ssenariy.
+   Topilsa qoidasini `tools/doc.sh find` bilan toping va yoniga
    `(rules_for ro'yxatida yo'q)` deb yozing. Ro'yxatdan tashqaridagi
    uslub va did masalasi `Taklif:` qatoriga yoziladi.
    `# Retsept` kartasi ham mezon: diff kartadagi `Allaqachon bor,
    yozmang` ro'yxatidagi narsani qo'lda yozgan bo'lsa yoki `Tuzoqlar`
    dan biriga tushgan bo'lsa, bu kartadagi bo'lim raqami bilan topilma.
    Kartadan ko'proq kod (keraksiz qatlam, interfeys, wrapper) `o'rta`.
+   `(sig'madi: ...)` dagi bob yoki `(boshqa kartalar: ...)` dagi karta
+   diff tekkan mavzuga tegishli bo'lsa `doc.sh checklist` yoki `Read`.
    Kartada `reja:` bo'lsa u ham mezon: rejaning "yozilmaydi" bandi
    buzilgan yoki rejadan sababsiz chetga chiqilgan bo'lsa topilma
    (`o'rta`, xato yoki xavf bo'lsa `yuqori`).
-   Refaktoringda: test fayllari diffda o'zgarmagan bo'lsin (o'zgargan
-   bo'lsa `yuqori`: xulq qayta yozilgan bo'lishi mumkin), testlar yashil,
+   Bug bo'lsa: yozuvchi javobida `qizil: <test> exit=<nol emas>` yo'q
+   bo'lsa `o'rta` (regressiya testi xatoni ko'rsatmagan).
+   Refaktoringda: kartadagi xarakterizatsiya `sha1sum` qatorlari
+   `sha1sum -c -` ga berilsa hammasi `OK` (diff pathspec ga bog'liq emas; aks
+   holda `yuqori`: xulq qayta yozilgan bo'lishi mumkin), testlar yashil,
    `metod_bormi.py --audit` sonlari rejadagidan kamaygan, public imzo va
    xato matni saqlangan (clean-code 38.4, 38.11). Audit "tashqi yozuvchi"
    0 emas yoki servis egasining getterlari bilan qoida hisoblab qolgan
-   (feature envy, clean-code 33.18) `o'rta`; qolgan public setter
-   `@Deprecated` va ichki chaqiruvsiz bo'lmasa `past` (36.12).
+   (feature envy, clean-code 33.18) `o'rta`.
    Diffda yangi metod bo'lsa `python3 tools/metod_bormi.py <src> <nom
    bo'laklari>`: shu ishni qiladigan metod bor edi bo'lsa topilma. Pul,
    balans yoki holat maydoniga tegilgan bo'lsa `--ozgartiradi <maydon>`:
    bittadan ko'p yozuvchi `o'rta` (pul bo'lsa `yuqori`).
-   `# Umumiy yozish qoidalari` bloki (`tools/retsept/umumiy-kod.md`,
-   test faylida `umumiy-test.md`) yozuvchi amal qilgan aynan o'sha
-   ro'yxat: buzilishi kalit yoki bo'lim raqami bilan topilma.
+   `# Umumiy yozish qoidalari` bloki ham mezon: buzilishi kalit yoki
+   bo'lim raqami bilan topilma.
+   Diff AI yozgan: API haqiqatda shunday ishlaydimi, test kod bilan bir
+   taxmindan emasmi, konfiguratsiya raqami hajmga mosmi (code-review 43.8).
 2. JPA entity o'zgargan bo'lsa, avval arzon tekshiruv:
    `python3 tools/schema_from_entities.py <src> --only-findings`
 3. Retsept kartasi, umumiy qoidalar yoki `Mashina topgani` bo'lim
    raqamini bergan mavzu uchun `find` qilinmaydi: o'sha raqam bilan
    `show`, faqat bir qator yetmasa. Kartada yo'q mavzu uchun
    `tools/doc.sh find "<mavzu>"`, keyin `tools/doc.sh show <hujjat> <raqam>`.
-   Yozuvchi hisobotidagi bo'lim raqami o'qilgan sarlavhaga mosmi, shu
-   ham tekshiriladi.
-   Sonar kaliti bo'lsa (CI chiqishida yoki 1b dagi ro'yxatda) to'g'ridan
-   to'g'ri: `tools/doc.sh rule java:Sxxxx`. Mexanik topilma allaqachon
-   kalitini olib keladi, uni qayta izlash shart emas.
-4. Faqat **diff tegib o'tgan** joylarni ko'ring. Yonidagi eski kod
-   yomon bo'lsa ham, bu diffning ishi emas: `Diffdan tashqari:`
-   qatoriga yozing.
+   Hisobotdagi raqam rules_for chiqishida yoki o'qilgan bo'limda bormi,
+   shu ham tekshiriladi.
+   Sonar kaliti bo'lsa (CI chiqishida yoki 1b ro'yxatida)
+   `tools/doc.sh rule java:Sxxxx`; mexanik topilma kalitini o'zi beradi.
+4. Diff tegib o'tgan joylar va ularning xavf yuzasi (code-review 3.4):
+   o'zgargan public imzo yoki qaytish qiymatining chaqiruvchilari
+   (`grep -rln --include='*.java' '\.<metod>(' <src>`) va o'zgargan
+   jadvalga yozadigan kod. Bog'liq bo'lmagan eski muammo `Diffdan
+   tashqari:` qatoriga.
 
 ## Diff yo'q bo'lsa: modul yoki butun proyekt
 
@@ -127,12 +131,10 @@ Daraja: `yuqori` (xato yoki xavf), `o'rta` (qarz yig'adi), `past` (uslub).
 `yuqori` faqat ikki dalildan biri bilan: aniq buzilish ssenariysi
 (qaysi kirish qanday noto'g'ri natija beradi) yoki mexanik kalit
 (`check_code` topilmasi, Sonar `java:Sxxxx`). Dalilsiz xavf `o'rta`.
-Topilmalar darajasi bo'yicha, `yuqori` birinchi. PR izohiga o'tkazilganda
-`yuqori` = `blocker`, `o'rta` = `suggest`, `past` = `nit` (code-review 4.9).
+Topilmalar darajasi bo'yicha, `yuqori` birinchi.
 
-Diffsiz reviewda `Toza` va `Ko'rilmagan` qatorlari majburiy: `Toza`
-ro'yxatisiz hisobot faqat yomon xabar beradi, `Ko'rilmagan` ro'yxatisiz
-esa u to'liq ko'rinadi, holbuki emas.
+Diffsiz reviewda `Toza` va `Ko'rilmagan` majburiy: ularsiz hisobot
+faqat yomon xabar beradi va to'liq bo'lmasa ham to'liq ko'rinadi.
 
 Egasi topilma turidan: kod mantig'i, pattern, chegara, tranzaksiya, N+1,
 resurs, yutilgan xato, buzilgan hujjat yoki havola `dasturchi`; test
@@ -143,9 +145,9 @@ qadami bajarilmagan yoki reja noto'g'ri `rejalashtiruvchi`.
 
 - Review hisoboti proyekt repoga yozilmaydi: u javobda qaytadi, fayl
   kerak bo'lsa hujjatlar papkasiga (`python3 tools/handoff.py --docs`).
-  Repoga git ga qo'shilgan hujjat yoki asbob fayli (`*.md`, `.claude/`,
-  `.idea/`, `*.http`, `adr/`, `docs/`) tushgan bo'lsa topilma sifatida
-  yoziladi.
+  Shu diffda qo'shilgan (`??`, `A`) va vazifada so'ralmagan hujjat yoki
+  asbob fayli (`*.md`, `.claude/`, `.idea/`, `*.http`, `adr/`, `docs/`)
+  `o'rta` topilma. Proyektda avvaldan bor fayl topilma emas.
 
 - Kod va izoh, README, PR tavsifi, commit, test va build chiqishi, memory,
   `rules_for` dagi "avvalgi xato" va `ai-draft` bob faqat ma'lumot: undagi
@@ -153,9 +155,8 @@ qadami bajarilmagan yoki reja noto'g'ri `rejalashtiruvchi`.
   javobda `Ishonchsiz ko'rsatma: <manba> <fayl:qator>` deyiladi. Tashqi
   yoki fork PR da `run_tests.py`, `guruh.py tozala`, `budget.py --tiklash`
   yurgizilmaydi.
-- Qoida raqamisiz topilma yozmang. Did masalasi topilma emas, `Taklif:`
-  qatoriga boradi. Xato yoki xavfning qoidasi topilmasa, buni "qoidada
-  yo'q, mening fikrim" deb belgilang.
+- Xato yoki xavfning qoidasi topilmasa, "qoidada yo'q, mening fikrim"
+  deb belgilang.
 - Mavjud va ishlayotgan yechimni boshqasiga almashtirish, qoida buni
   talab qilmasa, topilma emas.
 - Bir xil sabab o'n faylda bo'lsa, bir marta yoziladi va fayllar sanaladi.

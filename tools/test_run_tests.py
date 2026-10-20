@@ -672,6 +672,17 @@ def case_tasir_yoq(_):
     return code == 0 and "Ta'sirlangan test yo'q" in out
 
 
+def case_qoplanmagan_java(_):
+    """Testga tegmaydigan `src/main` `.java`: exit 5, README esa 0 qoladi."""
+    root = shop_repo("qoplanmagan")
+    path = "orders/src/main/java/shop/orders/Lonely.java"
+    with open(os.path.join(root, path), "w") as handle:
+        handle.write(main_class("shop.orders", "Lonely"))
+    code, out = run_cli(root, "--diff", "--yurgiz")
+    return (code == 5 and "Ta'sirlangan test yo'q" in out
+            and "Qoplanmagan: %s" % path in out)
+
+
 def case_hammasi(_):
     root = shop_repo("hammasi")
     code, out = run_cli(root, "--hammasi")
@@ -1567,6 +1578,7 @@ CASES = [
     ("KeyboardInterrupt da nevara to'xtaydi", case_keyboard_interrupt_nevara),
     ("SIGTERM da nevara to'xtaydi", case_sigterm_nevara),
     ("ta'sir yo'q: yurmaydi", case_tasir_yoq),
+    ("testsiz src/main .java: exit 5 qoplanmagan", case_qoplanmagan_java),
     ("--hammasi filtrsiz", case_hammasi),
     ("--modul: butun modul, boshqasi yo'q", case_modul),
     ("symlink yoki qisqa nom orqali yo'l", case_symlink_orqali_yol),

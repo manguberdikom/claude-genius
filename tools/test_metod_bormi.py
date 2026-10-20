@@ -36,6 +36,13 @@ public class Ticket {
     public void setState(String state) { this.state = state; }
 }
 """
+LEGACY = """package shop;
+public class Legacy {
+    private String phase;
+    @Deprecated(since = "1.1", forRemoval = false)
+    public void setPhase(String phase) { this.phase = phase; }
+}
+"""
 SERVICE_TEST = """package shop;
 public class OrderServiceTest {
     void t(Order o, Ticket k) { o.setStatus("X"); k.setState("Y"); }
@@ -47,7 +54,8 @@ def main():
     tmp = tempfile.mkdtemp(prefix="metod-")
     try:
         for name, text in (("Order.java", ORDER), ("OrderService.java", SERVICE),
-                           ("Ticket.java", TICKET), ("OrderServiceTest.java", SERVICE_TEST)):
+                           ("Ticket.java", TICKET), ("Legacy.java", LEGACY),
+                           ("OrderServiceTest.java", SERVICE_TEST)):
             with open(os.path.join(tmp, name), "w", encoding="utf-8") as handle:
                 handle.write(text)
         found = M.similar(tmp, ["refund", "status"])
@@ -66,7 +74,7 @@ def main():
          amount_writers == {"Order", "applyDiscount"}),
         ("audit: servis setteri tashqi yozuvchi, test fayli sanalmaydi",
          len(outside) == 1 and "OrderService.cancel" in outside[0] and "Test" not in outside[0]),
-        ("audit: ochiq public setter alohida sanaladi",
+        ("audit: ochiq public setter alohida sanaladi, @Deprecated emas",
          len(open_setters) == 1 and "setState" in open_setters[0]),
     ]
     failures = 0

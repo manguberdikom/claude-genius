@@ -14,7 +14,7 @@ Barcha patternlarning inglizcha nomi bo'yicha [alifbo indeksi](99-alifbo-boyicha
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 
-> Holat: 31 bobdan 28 tasi odam tekshirgan, 3 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
+> Holat: 31 bobdan 26 tasi odam tekshirgan, 5 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 

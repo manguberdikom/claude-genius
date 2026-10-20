@@ -25,3 +25,4 @@ Tuzoqlar:
 - DB commit dan keyin `KafkaTemplate.send` qilish hodisani yo'qotadi, uni shu tranzaksiyada outbox jadvaliga yozing (architect 29.11)
 - doimiy xatoni (buzilgan JSON, validatsiya) qayta urinish partitionni to'xtatadi, `addNotRetryableExceptions` bilan darhol DLT ga yuboring (architect 29.9)
 - `ack.acknowledge()` ni ishdan oldin chaqirish xabarni yo'qotadi: avval ishlov, keyin `ack` (code-review 22.5)
+- Kalitsiz `send(topic, event)` bir aggregate xabarlari tartibini buzadi: `send(topic, aggregateId, event)` (architect 29.9)

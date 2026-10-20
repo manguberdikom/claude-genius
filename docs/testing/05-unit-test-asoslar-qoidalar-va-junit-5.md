@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 5. Unit test: asoslar, qoidalar va JUnit 5 (Unit Testing - Foundations, Rules & JUnit 5)
 
@@ -250,7 +250,6 @@ class OrderServiceTest {
 
         verify(gateway).charge(paymentCaptor.capture());
         assertThat(paymentCaptor.getValue().amount()).isEqualTo(money("250.00"));
-        verifyNoMoreInteractions(gateway);
     }
 }
 ```
@@ -538,12 +537,12 @@ Oldingi bo'lim real implementatsiya va fake ni tanlash tartibini berdi. Interact
 - **Interaction tekshiruvi kattaroq zaxira test talab qiladi.** U faqat ikki holatda o'rinli: holatni tekshirishning yo'li yo'q (real ham, fake ham yo'q) yoki chaqiruv soni va tartibining o'zi talab (kesh bazaga murojaatni kamaytirishi kerak, shunda `verify(reader, atMostOnce()).select()` o'rinli). Ikki holatda ham interaction testi holat tekshiruvining o'rnini bosmaydi: unit testda `verify` bilan baza chaqiruvini tekshirgan bo'lsangiz, real bazada holatni tekshiradigan integratsion test qo'shiladi ([7-bob](07-integratsion-test-spring-boot-slice-testlari.md)).
 - **Interaction tekshiruvi holat o'zgartiradigan funksiyalar uchun qilinadi.** `sendEmail()`, `saveRecord()`, `logAccess()` - tashqi dunyoda yon ta'siri bor, shuning uchun `verify` ma'noli. `getUser()`, `findResults()`, `readFile()` esa holatni o'zgartirmaydi: ularning qaytargan qiymati sinovdan o'tayotgan kod ishida ishlatiladi va natijada tekshiriladi, demak chaqiruvning o'zini tekshirish ortiqcha. Bir signal aniq: metod shu testda allaqachon `when(...)` bilan stub qilingan bo'lsa, uni yana `verify` qilish kerak emas.
 
-**Ziddiyat: `verifyNoMoreInteractions`.** 5.7 dagi misol testning oxirida `verifyNoMoreInteractions(gateway)` chaqiradi. Google esa haddan tashqari aniq (over-specified) interaction tekshiruvidan ogohlantiradi: tekshiruv faqat shu xatti-harakatga tegishli funksiya va argumentlar bilan cheklanadi, qolgan argumentlar `any()` bilan ochiq qoldiriladi, har xatti-harakat esa o'z testiga ajratiladi. Aks holda test o'zi tekshirmayotgan xatti-harakat o'zgarganda sinadi.
+**`verifyNoMoreInteractions`.** Google haddan tashqari aniq (over-specified) interaction tekshiruvidan ogohlantiradi: tekshiruv faqat shu xatti-harakatga tegishli funksiya va argumentlar bilan cheklanadi, qolgan argumentlar `any()` bilan ochiq qoldiriladi, har xatti-harakat esa o'z testiga ajratiladi. Aks holda test o'zi tekshirmayotgan xatti-harakat o'zgarganda sinadi.
 
 Ajratuvchi shart - **"boshqa chaqiruv yo'q" shartnomaning bir qismimi yoki yo'qmi**:
 
 - **Shartnoma bo'lsa o'rinli.** "To'lov bir martadan ko'p yuborilmaydi", "kesh urgan so'rov bazaga chiqmaydi" - bu yerda chaqiruv soni tekshirilayotgan xatti-harakatning o'zi. Shunda `verifyNoMoreInteractions` yoki aniqrog'i `verify(gateway, times(1))` va `verifyNoInteractions(repository)` testning maqsadi bo'ladi va nomi ham shuni aytadi (`doesNotChargeTwice`).
-- **Umumiy himoya bo'lsa o'rinsiz.** Har testning oxiriga qo'yilgan `verifyNoMoreInteractions` implementatsiya tafsilotini qulflaydi: `gateway` ga yangi metrika chaqiruvi qo'shilsa, summa tekshirayotgan test ham qizil beradi. 5.7 dagi misol aynan shu holat, chunki u testning maqsadi summa ekanini aytadi.
+- **Umumiy himoya bo'lsa o'rinsiz.** Har testning oxiriga qo'yilgan `verifyNoMoreInteractions` implementatsiya tafsilotini qulflaydi: `gateway` ga yangi metrika chaqiruvi qo'shilsa, summa tekshirayotgan test ham qizil beradi.
 
 Amaliy chegara: `verifyNoMoreInteractions` testning sarlavhasida nomlangan xatti-harakatning qismi bo'lmasa, uni yozmang. `STRICT_STUBS` allaqachon ishlatilmagan stub ni ushlaydi, ya'ni ortiqcha himoya qatlami kerak emas.
 
