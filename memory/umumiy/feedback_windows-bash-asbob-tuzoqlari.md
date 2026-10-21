@@ -12,6 +12,11 @@ type: feedback
 - To'g'ri yo'llar: `./gradlew ...` (sh wrapper) yoki asbobni Pythondan chaqirish
   (`run_tests.py` shuning uchun shikastlanmaydi). Zarur bo'lsa `cmd //c` yoki
   `MSYS2_ARG_CONV_EXCL`.
+- Gradle ga `--tests '*IT'` kabi yulduz bilan **boshlanadigan** filtr Git Bash dan
+  `gradlew.bat` ga o'tganda glob sifatida ochiladi va Windowsda registrsiz
+  moslik bilan `.git` ga aylanishi mumkin: natija `No tests found for given
+  includes: [.git]`, testlar umuman yurmaydi. Filtrni paket prefiksi bilan
+  bering (`'uz.example.*IT'`).
 - Umumiy qoida: har buyruqni **chiqish matni** bilan tasdiqlang, exit kodiga
   yolg'iz ishonmang. Tasdiqlovchi buyruq (`ls`, `grep`) natijani ko'rsatsin.
 - `git worktree add` ni uzun yo'lga (sessiya temp papkasi) ochmang: Windowsda
