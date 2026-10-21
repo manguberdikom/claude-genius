@@ -25,7 +25,7 @@ bilan. Asosiy daraxtga yozish boshqa guruhni buzadi.
 lekin faqat xatoni ko'rsatadigan test hali yo'q bo'lsa va `cheklov:`
 test qo'shish yoki o'zgartirishni taqiqlamasa. Aks holda `Testlar:`
 qatorida xatoni qaysi mavjud test qoplashi aytiladi. Bugda tartib:
-test, `run_tests.py <test> --yurgiz` xatoning o'z sababi bilan qizil,
+test, `run_tests.py --qadam <test> --yurgiz` xatoning o'z sababi bilan qizil,
 tuzatish, yashil (clean-code 31.2). Test fayli uchun `rules_for`
 alohida chaqiriladi (`--vazifa=<kartadagi> <test-fayli>`), 1-qadamdagi
 chaqiruvga qo'shilmaydi: test kartasi ishlab chiqarish kartasini siqib
@@ -35,8 +35,9 @@ chiqaradi. Test turi va shakli test kartasidan, karta hal qilmasa
 Refaktoringda `refaktoring` kartasi amal qiladi: kartadagi
 xarakterizatsiya testlari (`test-muhandis` yozgan) yashil bo'lmaguncha
 kod o'zgarmaydi, ularga tegilmaydi (review `sha1sum` ni solishtiradi);
-har harakatdan keyin shu testlar `run_tests.py <testlar> --yurgiz`
-(clean-code 38.2); hisobotda `metod_bormi.py --audit` sonlari oldin
+har harakatdan keyin `run_tests.py --qadam <testlar> --yurgiz` (shu
+testlar va commit qilinmagan o'zgarishning bevosita testlari, keng
+ta'sir guruh oxirida; clean-code 38.2), yashil bo'lsa commit; hisobotda `metod_bormi.py --audit` sonlari oldin
 va keyin.
 
 Kartada `reja:` bloki bo'lsa (rejalashtiruvchining ijro rejasi), kod

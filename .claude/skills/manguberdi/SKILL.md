@@ -99,7 +99,7 @@ har aktyorga topshiriqdan oldin amal qiladi:
    qolmaydi, shuning uchun sonnet aktyor ham opus bilan bir xil shaklda
    yozadi.
 5. **Test faqat asbob bilan.** Aktyor ish oxirida bir marta (bug
-   qizilida va refaktoringda har harakatdan keyin `<test> --yurgiz`)
+   qizilida va refaktoringda har harakatdan keyin tor `--qadam <test>`)
    `python3 tools/run_tests.py --diff --yurgiz`: o'zgarishga ta'sir
    qilgan testlar, modul bilan, log faylda. To'liq suite partiyada bir
    marta, asosiy sessiyada, fonda (`--hammasi`). Xom `./gradlew test`,
@@ -173,7 +173,7 @@ oxirgi qatori `tez_yol: ha|yo'q (<sabab>)`. `ha` bo'lsa asosiy sessiya
 o'zi bajaradi (agent yo'q): `rules_for.py --vazifa=... <fayllar>`
 (`--no-mark` siz; Sonar kaliti bo'lsa `tools/doc.sh rule <kalit>`) ->
 test (Cheklov taqiqlamasa): bugda xatoni qayta hosil qiladigan test
-`run_tests.py <test> --yurgiz` da QIZIL (clean-code 31.2), feature da
+`run_tests.py --qadam <test> --yurgiz` da QIZIL (clean-code 31.2), feature da
 o'zgargan xatti-harakatga bitta test (sonarqube 17.2) -> Edit ->
 `run_tests.py --diff --yurgiz` yashil. Yozib bo'lgach
 `python3 tools/rules_for.py --no-mark --belgilar --diff` (yangi fayllar

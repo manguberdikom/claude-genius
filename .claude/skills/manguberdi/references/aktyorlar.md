@@ -86,7 +86,13 @@ Har aktyor testni faqat asbob bilan yurgizadi:
 
 ```bash
 python3 tools/run_tests.py --diff --yurgiz        # ish oxirida, bir marta
+python3 tools/run_tests.py --qadam <test> --yurgiz  # bug qizili, refaktoring harakati
 ```
+
+`--qadam` faqat berilgan testlar va commit qilinmagan o'zgarishning
+bevosita (nomi mos, murojaat qilgan) testlarini oladi: entity, bean,
+sozlama, migratsiya ta'siri va bir qadam narisi `--diff`/`--asos` ga
+qoladi. Har harakatda keng tanlov yuz testni qayta yurgizardi.
 
 Asbob o'zgarishga ta'sir qilgan test sinflarini tanlaydi, modulni o'zi
 qo'yadi, logni faylga yozadi va birinchi sababni beradi. Bash chaqiruvi

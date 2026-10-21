@@ -4,6 +4,7 @@
     python3 tools/run_tests.py --diff                  # reja: qaysi testlar, nega
     python3 tools/run_tests.py --diff --yurgiz         # yurgizadi, birinchi sababni beradi
     python3 tools/run_tests.py <fayl>... --yurgiz      # berilgan fayllar bo'yicha
+    python3 tools/run_tests.py --qadam [<test>...] --yurgiz  # refaktoring/bug qadami: tor
     python3 tools/run_tests.py --asos main --yurgiz    # guruh: main...HEAD va ishchi o'zgarish
     python3 tools/run_tests.py --modul orders --yurgiz # bitta modulning hammasi
     python3 tools/run_tests.py --hammasi --yurgiz      # to'liq suite: partiyada bir marta
@@ -786,8 +787,16 @@ def name_matches(name):
     return {name + s for s in TEST_SUFFIXES} | {"Test" + name}
 
 
-def select(project, existing, deleted=()):
+# `--qadam` (refaktoring yoki bug qadami): faqat 1-3 qoida, kengayishsiz.
+# Entity, bean, sozlama, migratsiya va build ta'siri, bir qadam narisi va
+# modulga kengayish guruh oxiridagi `--asos` yurishiga qoladi (clean-code
+# 38.2: kichik qadam, tez test; keng tekshiruv bir marta).
+NARROW_NOTE = "qadam: keng ta'sir (%s) guruh oxirida --asos yoki --diff bilan"
+
+
+def select(project, existing, deleted=(), narrow=False):
     plan = Plan()
+    skipped = []
     tests = project.tests()
     by_name = {}
     for test in tests:
@@ -829,7 +838,10 @@ def select(project, existing, deleted=()):
         module = project.module_of(path)
         inner = next((path[len(f) + 1:] for f in project.included
                       if path.startswith(f + "/")), None)
-        if ROOT_BUILD_RE.search(path) or (BUILD_FILE_RE.search(path) and module == ""
+        if narrow and (BUILD_FILE_RE.search(path) or ROOT_BUILD_RE.search(path)
+                       or CONFIG_RE.search(path) or MIGRATION_RE.search(path)):
+            skipped.append(os.path.basename(path))
+        elif ROOT_BUILD_RE.search(path) or (BUILD_FILE_RE.search(path) and module == ""
                                           and "/" not in path) or (
                 inner is not None and INCLUDED_ROOT_RE.search(inner)):
             plan.everything = "build fayli: %s" % path
@@ -875,6 +887,10 @@ def select(project, existing, deleted=()):
     for name, src in main_names.items():
         if src is None:
             continue
+        if narrow:
+            if WIRING_RE.search(src.text) or ENTITY_RE.search(src.text):
+                skipped.append(name)
+            continue
         for regex, kind, pick in ((WIRING_RE, "wiring", spring_tests),
                                   (ENTITY_RE, "entity", db_tests)):
             if not regex.search(src.text):
@@ -901,6 +917,9 @@ def select(project, existing, deleted=()):
             for found in set(pattern.findall(test.text)):
                 hits[found].append(test)
         for name, found in hits.items():
+            if len(found) > WIDE and narrow:
+                skipped.append(name)
+                continue
             if len(found) > WIDE:
                 for module, sset in sorted({(t.module, t.sset) for t in found}):
                     plan.add_whole(module, sset, "keng ta'sir: %s %d testda" % (name, len(found)))
@@ -912,7 +931,7 @@ def select(project, existing, deleted=()):
     references(list(helper_names), "helper")
 
     # 4. Bir qadam: o'zgargan sinfni ishlatgan asosiy kod sinflari.
-    if main_names:
+    if main_names and not narrow:
         pattern = word_re(main_names)
         changed = {src.rel for src in main_names.values() if src is not None}
         dependents = OrderedDict()
@@ -939,9 +958,13 @@ def select(project, existing, deleted=()):
     for test in tests:
         totals[(test.module, test.sset)] = totals.get((test.module, test.sset), 0) + 1
     for key, chosen in list(plan.targets.items()):
+        if narrow:
+            break
         if len(chosen) > MAX_CLASSES or (len(chosen) > 10 and len(chosen) * 2 > totals.get(key, 0)):
             plan.add_whole(key[0], key[1], "%d sinf tanlandi, %d dan" % (len(chosen), totals.get(key, 0)))
 
+    if skipped:
+        plan.notes.append(NARROW_NOTE % ", ".join(sorted(set(skipped))[:5]))
     if ignored:
         plan.notes.append("testga ta'sir qilmaydi deb olindi: %s%s"
                           % (", ".join(ignored[:3]), " (+%d)" % (len(ignored) - 3)
@@ -2080,6 +2103,9 @@ def main(argv=None):
     parser.add_argument("files", nargs="*", help="o'zgargan fayllar")
     parser.add_argument("--diff", action="store_true", help="git dagi o'zgarishlar")
     parser.add_argument("--asos", metavar="REF", help="REF...HEAD va ishchi o'zgarish")
+    parser.add_argument("--qadam", action="store_true",
+                        help="refaktoring/bug qadami: berilgan testlar va commit qilinmagan "
+                             "o'zgarishning bevosita testlari, kengayishsiz")
     parser.add_argument("--modul", action="append", default=[], metavar="PAPKA",
                         help="modulning barcha testlari (takrorlanadi)")
     parser.add_argument("--hammasi", action="store_true", help="to'liq suite")
@@ -2152,7 +2178,13 @@ def main(argv=None):
             for sset in sets:
                 plan.add_whole(module, sset, "--modul %s" % (module or "."))
     elif not args.hammasi:
-        if args.files:
+        if args.qadam:
+            existing, deleted = changed_files(root, None)
+            for path in args.files:
+                path = relative_to(path, root)
+                if path not in existing and os.path.exists(os.path.join(root, path)):
+                    existing.append(path)
+        elif args.files:
             existing = [relative_to(path, root) for path in args.files]
             deleted = [p for p in existing if not os.path.exists(os.path.join(root, p))]
             existing = [p for p in existing if p not in deleted]
@@ -2172,7 +2204,7 @@ def main(argv=None):
             parser.print_usage()
             print("fayl, --diff, --asos yoki --hammasi kerak", file=sys.stderr)
             return 2
-        plan = select(project, existing, deleted)
+        plan = select(project, existing, deleted, narrow=args.qadam)
         if plan.empty():
             print("Ta'sirlangan test yo'q: %s" % (
                 "o'zgarish yo'q" if not (existing or deleted)

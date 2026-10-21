@@ -66,6 +66,9 @@ qarorlar: <tanlangan standartlar, qoida raqami bilan>
 test: python3 tools/run_tests.py --ildiz <papka> --asos <asos> --yurgiz
 ```
 
+`test:` guruh boshidan yig'ilgan butun diffni oladi: u guruh oxirida
+bir marta. Qadam ichida `--ildiz <papka> --qadam <test> --yurgiz`.
+
 `guruh:` qatori budjetni guruhga ajratadi (`budget.py`): ikki guruhning
 dasturchisi bitta hisobni yemaydi. Id `guruh.py yarat` bilan
 ro'yxatga olingan bo'lishi shart, aks holda chaqiruv umumiy hisobga

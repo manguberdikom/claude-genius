@@ -3,6 +3,16 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.5.2 (2026-10-21)
+
+- `run_tests.py --qadam [<test>...]`: refaktoring harakati va bug qizili
+  uchun tor tanlov: berilgan testlar va commit qilinmagan o'zgarishning
+  bevosita testlari. Entity, bean, sozlama, migratsiya ta'siri, bir qadam
+  narisi va modulga kengayish guruh oxiridagi `--asos`/`--diff` ga
+  qoladi. Avval har harakat entity yoki servisga tegsa modulning hamma
+  baza va Spring testlarini, guruhda esa guruh boshidan yig'ilgan diffni
+  yurgizardi.
+
 ## 0.5.1 (2026-10-20)
 
 O'lchovdan keyin (7 vazifa, keyin 4 qayta yurish):

@@ -15,7 +15,7 @@ Minimal shakl (patterns 23.24, architect 34.3, clean-code 38.1):
 
 Allaqachon bor, yozmang:
 - Ish ro'yxati qo'lda emas: `python3 tools/metod_bormi.py <src> --audit` (ko'p yozuvchi maydon, takror blok, uzun metod); oldin va keyin sonlari hisobotda (architect 34.10)
-- Har harakatdan keyin `run_tests.py <test> --yurgiz` (clean-code 38.2), qadam yiqilsa debug emas, oxirgi yashil holatga qaytish (clean-code 38.17)
+- Har harakatdan keyin `run_tests.py --qadam <test> --yurgiz`, keng tanlov oxirida (clean-code 38.2); yiqilsa oxirgi yashil holatga qaytish (38.17)
 
 Tuzoqlar:
 - Refaktoring va mantiq o'zgarishi bir qadamda: xatti-harakat jim o'zgaradi; ikki shlyapa alohida, refaktoringda xarakterizatsiya testi o'zgartirilmaydi (clean-code 38.4)

@@ -253,6 +253,34 @@ def case_keng_murojaat_butun_vazifa(_):
     return ("orders", "test") in plan.whole and ("orders", "test") not in plan.targets
 
 
+def case_qadam_kengaymaydi(_):
+    files = gradle_shop()
+    files["orders/src/main/java/shop/orders/Order.java"] = main_class(
+        "shop.orders", "Order", "").replace("public class", "@jakarta.persistence.Entity public class")
+    files["orders/src/test/java/shop/orders/OrderTest.java"] = java("shop.orders", "OrderTest")
+    for i in range(run_tests.WIDE + 1):
+        files["orders/src/test/java/shop/orders/Uses%dTest.java" % i] = java(
+            "shop.orders", "Uses%dTest" % i, body="Money m;")
+    files["orders/src/main/java/shop/orders/Money.java"] = main_class("shop.orders", "Money")
+    root = tree("qadam", files)
+    project = run_tests.Project(root, runner=["./gradlew"])
+    changed = ["orders/src/main/java/shop/orders/Order.java",
+               "orders/src/main/java/shop/orders/Money.java",
+               "orders/src/main/java/shop/orders/OrderService.java",
+               "orders/src/main/resources/db/migration/V2__x.sql",
+               "orders/src/test/java/shop/orders/OrderRepositoryIT.java"]
+    narrow = run_tests.select(project, changed, narrow=True)
+    wide = run_tests.select(project, changed)
+    picked = chosen(narrow)
+    # Entity (baza testlari), migratsiya, keng murojaat (modul) va bir qadam
+    # (InvoiceTest) qadamda yurmaydi; nomi mos va berilgan test yuradi.
+    return (not narrow.whole and narrow.everything is None
+            and picked == {"shop.orders.OrderTest", "shop.orders.OrderServiceTest",
+                           "shop.orders.OrderRepositoryIT"}
+            and any("guruh oxirida" in n for n in narrow.notes)
+            and ("orders", "test") in wide.whole)
+
+
 def case_testga_tegmaydigan_ozgarish(_):
     root = tree("hujjat", gradle_shop())
     _, plan = plan_for(root, ["README.md", "docs/arch.md"])
@@ -1564,6 +1592,7 @@ CASES = [
     ("migratsiya: baza testlari", case_migratsiya_baza_testlari),
     ("build fayli: ildiz va modul", case_build_fayli),
     ("keng murojaat butun vazifaga", case_keng_murojaat_butun_vazifa),
+    ("--qadam: entity, migratsiya, keng murojaat va bir qadam kengaymaydi", case_qadam_kengaymaydi),
     ("testga tegmaydigan o'zgarish", case_testga_tegmaydigan_ozgarish),
     ("abstrakt yordamchi sinf", case_yordamchi_sinf),
     ("build chiqishi o'zgarish emas", case_build_chiqishi_ozgarish_emas),
