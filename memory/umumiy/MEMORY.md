@@ -22,3 +22,5 @@ Barcha proyektlarga. Bir yozuv bir qator, nom mavzuni aytadi.
 - `feedback_darvoza-bosh-royxat.md` - bo'sh ro'yxat ochiq darvoza
 - `feedback_anonim-credential-ruxsat-guardi.md` - anonim link egalik guardi
 - `feedback_lazy-oqim-mock-bilan-yashil.md` - lazy oqim yopiladi, mock yashiradi
+- `feedback_pgbouncer-bad-packet-header.md` - hex sarlavha, max_packet_size
+- `feedback_outbox-payload-nusxa.md` - payload da faqat id, consumer bormi
