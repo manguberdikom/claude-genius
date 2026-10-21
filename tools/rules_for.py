@@ -895,8 +895,18 @@ def pick_chapters(signals):
 
 
 def card_ref(path):
-    """Karta yo'li: klonda nisbiy, boshqa proyektda mutlaq (u yerdan ochiladi)."""
-    return os.path.relpath(path, ROOT) if in_clone() else path
+    """Karta yo'li: klonda nisbiy (Windows da ham `/` bilan), boshqa proyektda mutlaq (u yerdan ochiladi)."""
+    return os.path.relpath(path, ROOT).replace(os.sep, "/") if in_clone() else path
+
+
+def shorten_card(text, ref):
+    """Kartaning "Minimal shakl" kod blokini bitta `Shakl: <ref>` qatoriga almashtiradi.
+
+    Almashtirish funksiya bilan beriladi: Windows yo'lidagi teskari slesh
+    satr shablonida escape bo'lib o'qilardi (`\\U` -> "bad escape").
+    """
+    return re.sub(r"\nMinimal shakl[^\n]*\n\n```.*?```\n",
+                  lambda _match: "\nShakl: %s\n" % ref, text, count=1, flags=re.S)
 
 
 def with_tool_paths(text):
@@ -1051,9 +1061,7 @@ def main():
             # tushadi: shakl faylda allaqachon bor, yozuvchiga "yozmang" va
             # tuzoqlar kerak.
             if topic and label not in topic:
-                text = re.sub(r"\nMinimal shakl[^\n]*\n\n```.*?```\n",
-                              "\nShakl: %s\n" % card_ref(path),
-                              text, count=1, flags=re.S)
+                text = shorten_card(text, card_ref(path))
             print("#" + with_tool_paths(text) + "\n")
         if len(cards) > MAX_RECIPES:
             print("(boshqa kartalar: %s)\n" % ", ".join(

@@ -925,6 +925,11 @@ def main():
         ("boshqa proyektda karta yo'li mutlaq",
          "Shakl: " + R.RECIPES in out_far and "Shakl: tools/" not in out_far),
         ("boshqa proyektda python3 tools/ buyrug'i yo'q", "python3 tools/" not in out_far),
+        # Windows da mutlaq yo'l `C:\Users\...`: re.sub shablonida `\U` xato berardi.
+        ("Windows yo'li karta qisqartirishini buzmaydi",
+         "\nShakl: C:\\Users\\x\\retsept\\a.md\n" in R.shorten_card(
+             "# a\n\nMinimal shakl (java):\n\n```java\nclass A {}\n```\n\nTuzoqlar:\n",
+             "C:\\Users\\x\\retsept\\a.md")),
     ]
     failures += report(rows)
     total += len(rows)
