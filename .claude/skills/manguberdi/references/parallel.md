@@ -117,7 +117,7 @@ erta ko'rsatadi. To'liq suite esa hamma guruh birlashgach bir marta
 yuradi:
 
 ```bash
-python3 tools/guruh.py birlashtir orders     # patch indeksga, commit yo'q
+python3 tools/guruh.py birlashtir orders     # qadam commitlari cherry-pick, har fayl tekshiriladi
 python3 tools/guruh.py birlashtir billing
 python3 tools/run_tests.py --hammasi --yurgiz   # fonda: Bash run_in_background
 # suite natijasi kelgach: yiqilgan test qaysi guruhniki
@@ -143,11 +143,19 @@ guruhga bog'laydigan worktree va holat yozuvi yo'qoladi. `birlashtir` 1
 qaytargan, ziddiyatda qolgan yoki budjeti tugab to'xtagan guruh
 tozalanmaydi: uning ishi faqat o'z worktree sida.
 
+`birlashtir` asos `dev` tarixida va daraxt toza bo'lsa guruh commitlarini
+`cherry-pick` qiladi (har qadam commiti `dev` da alohida qoladi), aks
+holda patch indeksga. Oxirida har fayl guruh nusxasi bilan solishtiriladi:
+`tekshiruv: N/N bir xil` chiqmasa (`TEKSHIRUV: ... tushmadi`) guruh
+birlashgan emas, ro'yxatdagi fayllar olib kelinmaguncha tozalanmaydi.
+Fayl sonini aktyor hisobotidagi bilan solishtiring.
+
 `guruh.py` buni o'zi ham ushlaydi. Birlashtirilmagan va o'zgarishi bor
 guruhni `tozala` rc=1 bilan rad etadi va fayllarini aytadi, `tozala
 --hammasi` faqat birlashgan yoki o'zgarishsiz guruhlarni oladi va
-qolganini sanab rc=1 qaytaradi. `tozala <id> --majburiy` ishni
-o'chiradi: faqat u boshqa yo'l bilan asosiy daraxtga tushgani aniq
+qolganini sanab rc=1 qaytaradi. `tozala <id> --majburiy` worktree ni
+o'chiradi, commit qilinmagan ishni avval `genius/<id>` ga commit qiladi
+(branch qoladi): faqat u boshqa yo'l bilan asosiy daraxtga tushgani aniq
 bo'lganda (masalan `--3way` ziddiyati hal qilingach) yoki foydalanuvchi
 qarori bilan. Holat fayli buzilgan bo'lsa (yo'l guruhning o'z worktree si
 emas yoki branch `genius/<id>` emas) rc=2 qaytadi va hech narsa

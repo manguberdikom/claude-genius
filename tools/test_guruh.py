@@ -76,11 +76,14 @@ def case_ajratilgan_guruhlar(_):
     write(wt(root, "g1"), "a.txt", "a1\n")
     write(wt(root, "g1"), "yangi.txt", "yangi\n")
     write(wt(root, "g2"), "b.txt", "b2\n")
-    c1, _ = run(root, "birlashtir", "g1")
+    c1, o1 = run(root, "birlashtir", "g1")
     c2, _ = run(root, "birlashtir", "g2")
-    status = git(root, "status", "--porcelain").stdout
-    return (c1 == 0 and c2 == 0 and "M  a.txt" in status and "M  b.txt" in status
-            and "A  yangi.txt" in status)
+    # Toza daraxt va asos tarixda: commitlar cherry-pick bilan, daraxt toza.
+    status = git(root, "status", "--porcelain", "--untracked-files=no").stdout
+    tracked = git(root, "ls-files").stdout.split()
+    return (c1 == 0 and c2 == 0 and not status.strip() and "yangi.txt" in tracked
+            and read(root, "a.txt") == "a1\n" and read(root, "b.txt") == "b2\n"
+            and "tekshiruv: 2/2" in o1 and "cherry-pick" in o1)
 
 
 def case_kesishgan_tegmaydi(_):
@@ -163,9 +166,50 @@ def case_ikkinchi_partiya(_):
             ("2-partiya 1-partiya natijasini ko'radi", sees),
             ("2-partiya diffi faqat b.txt", "b.txt" in files_before
              and "a.txt" not in files_before and "yangi.txt" not in files_before),
-            ("birlashtir: uchala fayl indeksda", merged == 0 and "1 fayl" in out
-             and "M  a.txt" in status and "A  yangi.txt" in status
-             and "M  b.txt" in status)]
+            ("birlashtir: uchala fayl commitda, daraxt toza", merged == 0 and "1 fayl" in out
+             and not git(root, "status", "--porcelain", "--untracked-files=no").stdout.strip()
+             and read(root, "b.txt") == "p2\n" and read(root, "yangi.txt") == "p1\n")]
+
+
+def case_qadam_commitlari_saqlanadi(_):
+    root = repo("commitlar")
+    run(root, "yarat", "g1")
+    path = wt(root, "g1")
+    for i, name in enumerate(("a.txt", "b.txt")):
+        write(path, name, "qadam%d\n" % i)
+        git(path, "add", "-A")
+        git(path, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "qadam %d" % i)
+    write(path, "c.txt", "qolgan\n")
+    code, out = run(root, "birlashtir", "g1")
+    log = git(root, "log", "--format=%s").stdout.splitlines()
+    return (code == 0 and log[:3] == ["genius: g1 qolgan o'zgarish", "qadam 1", "qadam 0"]
+            and "tekshiruv: 3/3" in out)
+
+
+def case_majburiy_branchda_saqlaydi(_):
+    root = repo("majburiy")
+    run(root, "yarat", "g1")
+    write(wt(root, "g1"), "ish.txt", "muhim\n")
+    code, out = run(root, "tozala", "g1", "--majburiy")
+    kept = git(root, "show", "genius/g1:ish.txt").stdout
+    return code == 0 and kept == "muhim\n" and "saqlandi" in out
+
+
+def case_tekshiruv_tushmagan_fayl(_):
+    import guruh
+    a, b = os.path.join(TEMP, "tek_a"), os.path.join(TEMP, "tek_b")
+    for d in (a, b):
+        os.makedirs(d)
+    write(a, "x.txt", "1\n")
+    write(b, "x.txt", "1\n")
+    write(a, "y.txt", "guruh\n")
+    write(b, "y.txt", "boshqa\n")
+    write(a, "z.txt", "yangi\n")
+    with open(os.path.join(a, "w.txt"), "wb") as handle:
+        handle.write(b"q\n")
+    with open(os.path.join(b, "w.txt"), "wb") as handle:
+        handle.write(b"q\r\n")
+    return guruh.lost_files(b, a, ["x.txt", "y.txt", "z.txt", "w.txt"]) == ["y.txt", "z.txt"]
 
 
 def case_ichki_papka_exclude(_):
@@ -355,6 +399,9 @@ CASES = [
     ("buzilgan holat fayli: rc=2, hech narsa o'chmaydi", case_buzilgan_holat),
     ("--nusxa ../x va mutlaq yo'l rad, '-' bilan nom rad", case_nusxa_tashqari_rad),
     ("yarat yiqilsa worktree va branch qaytariladi", case_yarat_qaytariladi),
+    ("qadam commitlari dev ga alohida tushadi", case_qadam_commitlari_saqlanadi),
+    ("tozala --majburiy ishni branch da saqlaydi", case_majburiy_branchda_saqlaydi),
+    ("tekshiruv: tushmagan va farqli fayl aytiladi", case_tekshiruv_tushmagan_fayl),
 ]
 
 

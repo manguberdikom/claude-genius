@@ -34,9 +34,13 @@ papkasi `git status` da ko'rinardi va keyingi guruhning asosiga ichki
 repo bo'lib tushardi. `GENIUS_GURUH_DIR` berilsa eskicha
 `<papka>/<repo>.guruh-<id>`.
 
-Birlashtirish commit qilmaydi: guruhning butun o'zgarishi (yangi
-fayllar bilan) patch bo'lib asosiy daraxtga qo'llanadi va indeksga
-tushadi, xuddi ish o'sha yerda bajarilgandek. Guruhlar fayl bo'yicha
+Birlashtirish ikki yo'l bilan. Asos asosiy branch tarixida bo'lsa va
+asosiy daraxt toza bo'lsa, guruh commitlari `cherry-pick` bilan
+ko'chadi: har qadam commiti alohida saqlanadi. Aks holda (iflos daraxt
+asosi) guruhning butun o'zgarishi patch bo'lib asosiy daraxtga
+qo'llanadi va indeksga tushadi. Ikkala yo'lda ham oxirida har fayl
+guruhdagi nusxa bilan bayt-ba-bayt solishtiriladi: bittasi tushmasa
+guruh birlashgan hisoblanmaydi va fayllar aytiladi. Guruhlar fayl bo'yicha
 ajratilgan bo'lishi kerak; kesishsa `birlashtir` asosiy daraxtga tegmay
 kesishgan fayllarni aytadi, `--3way` esa ziddiyat belgilari bilan
 qo'llaydi va egasi ularni asosiy daraxtda hal qiladi.
@@ -51,6 +55,7 @@ si bo'lmasa yoki branch `genius/<id>` bo'lmasa rc=2: hech narsa o'chmaydi.
 
 import argparse
 import contextlib
+import filecmp
 import json
 import os
 import re
@@ -268,6 +273,80 @@ def create(root, gid, copies):
     return 0
 
 
+def ident(root):
+    if out(root, "config", "user.email"):
+        return []
+    return ["-c", "user.name=genius", "-c", "user.email=genius@localhost"]
+
+
+def save_leftover(path, gid, note):
+    """Worktree dagi commit qilinmagan o'zgarish branch ga commit: ish
+    worktree o'chsa ham `genius/<id>` da qoladi."""
+    git(path, "add", "-A")
+    if git(path, "diff", "--cached", "--quiet").returncode == 0:
+        return False
+    git(path, *(ident(path) + ["commit", "-q", "--no-verify", "-m",
+                               "genius: %s %s" % (gid, note)]), check=True)
+    return True
+
+
+def lost_files(root, path, files, skip=()):
+    """Guruh nusxasi bilan asosiy daraxtda bir xil bo'lmagan fayllar."""
+    lost = []
+    for name in files:
+        if name in skip:
+            continue
+        mine, main = os.path.join(path, name), os.path.join(root, name)
+        if os.path.lexists(mine) != os.path.lexists(main) or (
+                os.path.isfile(mine) and not same_content(mine, main)):
+            lost.append(name)
+    return lost
+
+
+def same_content(a, b):
+    """Bayt-ba-bayt; farq faqat qator oxirida bo'lsa ham bir xil (Windows
+    da `core.autocrlf` checkout da CRLF yozadi, aktyor esa LF yozgan)."""
+    if filecmp.cmp(a, b, shallow=False):
+        return True
+    with open(a, "rb") as one, open(b, "rb") as two:
+        return one.read().replace(b"\r\n", b"\n") == two.read().replace(b"\r\n", b"\n")
+
+
+def report_merge(gid, files, lost, how):
+    if lost:
+        print("TEKSHIRUV: %s, %d fayldan %d tasi asosiy daraxtga tushmadi (%s):"
+              % (gid, len(files), len(lost), how))
+        for name in lost:
+            print("  " + name)
+        print("Guruh birlashgan hisoblanmaydi, ish genius/%s da. Fayllarni "
+              "qo'lda olib keling, keyin qayta birlashtir." % gid)
+        return 1
+    print("Birlashtirildi: %s, %d fayl (%s); tekshiruv: %d/%d bir xil"
+          % (gid, len(files), how, len(files), len(files)))
+    for name in files[:15]:
+        print("  " + name)
+    if len(files) > 15:
+        print("  ... yana %d ta (guruh.py royxat --fayllar)" % (len(files) - 15))
+    return 0
+
+
+def pick_commits(root, path, gid, base):
+    """Guruh commitlari cherry-pick bilan: (rc, izoh). rc None: bu yo'l
+    mos emas yoki qo'llanmadi, asosiy daraxt o'zgarmagan."""
+    if git(root, "merge-base", "--is-ancestor", base, "HEAD").returncode:
+        return None, "asos branch tarixida emas"
+    if out(root, "status", "--porcelain", "--untracked-files=no"):
+        return None, "asosiy daraxt toza emas"
+    save_leftover(path, gid, "qolgan o'zgarish")
+    tip = out(path, "rev-parse", "HEAD")
+    count = out(root, "rev-list", "--count", "%s..%s" % (base, tip))
+    picked = git(root, *(ident(root) + ["cherry-pick", "%s..%s" % (base, tip)]))
+    if picked.returncode:
+        git(root, "cherry-pick", "--abort")
+        return None, "cherry-pick qo'llanmadi: %s" % git_text(picked).splitlines()[-1:]
+    return 0, "%s commit cherry-pick" % count
+
+
 def changed(path, base):
     git(path, "add", "-A")
     names = out(path, "diff", "--cached", "--name-only", base)
@@ -285,19 +364,29 @@ def merge(root, gid, three_way):
     if not files:
         print("Guruh %s da o'zgarish yo'q." % gid)
         return 0
+    picked, why = pick_commits(root, path, gid, base)
+    if picked == 0:
+        code = report_merge(gid, files, lost_files(root, path, files), why)
+        if code == 0:
+            group["merged"] = True
+            group["files"] = files
+            save(root, data)
+        return code
     patch = git(path, "diff", "--cached", "--binary", base).stdout
     check = git(root, "apply", "--check", "--index", data=patch)
     if check.returncode == 0:
         git(root, "apply", "--index", data=patch, check=True)
-        group["merged"] = True
-        group["files"] = files
-        save(root, data)
-        print("Birlashtirildi: %s, %d fayl (indeksda, commit qilinmagan)" % (gid, len(files)))
-        for name in files[:15]:
-            print("  " + name)
-        return 0
-    touched = set(out(root, "diff", "--name-only", "HEAD").splitlines()) | set(
-        out(root, "diff", "--cached", "--name-only").splitlines())
+        code = report_merge(gid, files, lost_files(root, path, files),
+                            "patch, indeksda, commit qilinmagan; %s" % why)
+        if code == 0:
+            group["merged"] = True
+            group["files"] = files
+            save(root, data)
+        return code
+    # Asosdan beri asosiy daraxtda o'zgargan hamma narsa: commit qilingani
+    # (oldingi guruh cherry-pick) ham, qilinmagani ham.
+    touched = set(out(root, "diff", "--name-only", base).splitlines()) | set(
+        out(root, "diff", "--cached", "--name-only", base).splitlines())
     overlap = sorted(touched & set(files))
     if not three_way:
         print("Qo'llanmadi, asosiy daraxtga tegilmadi: %s" % gid)
@@ -310,6 +399,11 @@ def merge(root, gid, three_way):
         return 1
     applied = git(root, "apply", "--3way", data=patch)
     conflicts = out(root, "diff", "--name-only", "--diff-filter=U").splitlines()
+    if applied.returncode and not conflicts:
+        print("Qo'llanmadi, asosiy daraxtga hech narsa tushmadi: %s (%s)"
+              % (gid, git_text(applied)))
+        print("Ish genius/%s va worktree da turibdi. tozala --majburiy qilmang." % gid)
+        return 1
     if applied.returncode or conflicts:
         # Birlashgan deb belgilanmaydi: aks holda tozala guruh ishini
         # ziddiyat hal qilinmasdan o'chirib yuborardi.
@@ -319,11 +413,14 @@ def merge(root, gid, three_way):
         print("Guruh birlashgan hisoblanmaydi. Ziddiyat asosiy daraxtda hal "
               "qilingach: guruh.py tozala %s --majburiy" % gid)
         return 1
-    group["merged"] = True
-    group["files"] = files
-    save(root, data)
-    print("Birlashtirildi (3way): %s, %d fayl" % (gid, len(files)))
-    return 0
+    code = report_merge(gid, files, lost_files(root, path, files, skip=overlap), "3way")
+    if overlap:
+        print("Kesishgan, ikki guruh ishi birga (qo'lda tekshiring): %s" % ", ".join(overlap))
+    if code == 0:
+        group["merged"] = True
+        group["files"] = files
+        save(root, data)
+    return code
 
 
 def worktrees(root):
@@ -385,6 +482,10 @@ def remove(root, gid, force=False):
             print("  " + name)
         print("Avval birlashtiring; ish kerak bo'lmasa: guruh.py tozala %s --majburiy" % gid)
         return 1
+    if files:
+        # --majburiy ham ishni yo'qotmaydi: branch da commit bo'lib qoladi.
+        save_leftover(path, gid, "tozala --majburiy oldidan saqlandi")
+        print("Ish branch da saqlandi: %s (%d fayl)" % (branch, len(files)))
     git(root, "worktree", "remove", "--force", path)
     if os.path.isdir(path):
         shutil.rmtree(path, ignore_errors=True)

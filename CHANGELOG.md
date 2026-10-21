@@ -3,6 +3,18 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.5.3 (2026-10-21)
+
+- `guruh.py birlashtir` fayl yo'qotmaydi: asos `dev` tarixida va daraxt
+  toza bo'lsa guruh commitlari `cherry-pick` bilan (har qadam commiti
+  alohida qoladi), aks holda patch. Ikkala yo'lda har fayl guruh nusxasi
+  bilan solishtiriladi (`tekshiruv: N/N`), bittasi tushmasa guruh
+  birlashgan hisoblanmaydi. `--3way` patch umuman qo'llanmasa buni
+  aytadi (avval "ziddiyat" deb `tozala --majburiy` ga yo'naltirardi).
+  Kesishish asosdan beri commit qilingan o'zgarishni ham ko'radi.
+- `tozala --majburiy` commit qilinmagan ishni avval `genius/<id>` ga
+  commit qiladi, branch qoladi.
+
 ## 0.5.2 (2026-10-21)
 
 - `run_tests.py --qadam [<test>...]`: refaktoring harakati va bug qizili
