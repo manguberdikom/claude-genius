@@ -24,3 +24,5 @@ Barcha proyektlarga. Bir yozuv bir qator, nom mavzuni aytadi.
 - `feedback_lazy-oqim-mock-bilan-yashil.md` - lazy oqim yopiladi, mock yashiradi
 - `feedback_pgbouncer-bad-packet-header.md` - hex sarlavha, max_packet_size
 - `feedback_outbox-payload-nusxa.md` - payload da faqat id, consumer bormi
+- `feedback_liquibase-darvozali-contract.md` - DROP ni vaqt va ma'lumot darvozasi bilan
+- `feedback_allowlist-eskirgan-qator-javap.md` - olingan maydon allowlistni eskirtadi
