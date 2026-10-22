@@ -26,3 +26,6 @@ Barcha proyektlarga. Bir yozuv bir qator, nom mavzuni aytadi.
 - `feedback_outbox-payload-nusxa.md` - payload da faqat id, consumer bormi
 - `feedback_liquibase-darvozali-contract.md` - DROP ni vaqt va ma'lumot darvozasi bilan
 - `feedback_allowlist-eskirgan-qator-javap.md` - olingan maydon allowlistni eskirtadi
+- `feedback_parallel-it-fake-thread-safe.md` - parallel IT fake poygasi
+- `feedback_sonar-lokal-hotspot-qator-siljishi.md` - lokal hotspot qatori surildi
+- `feedback_s5443-zip-tekshiruvi-xotirada.md` - temp faylsiz zip tekshiruvi
