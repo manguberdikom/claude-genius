@@ -22,3 +22,10 @@ type: feedback
 - Bugun bo'sh sukut bilan ixtiyoriy kalitni (`${X:}`, masalan alohida migratsiya
   useri yoki URL i) "muhitga xos" deb sukutsiz qilish prod ni keraksiz to'xtatadi:
   bo'sh qiymatning ma'nosi bor-yo'qligini kodda tekshiring.
+- **Profilni o'z env nomi bilan tanlash.** `spring.profiles.active: ${MY_PROFILE:}` deployda ishlamay qolishi mumkin:
+  konteyner entrypoint i ko'pincha boshqa env ni `-Dspring.profiles.active` qilib beradi, system property esa
+  config faylidan ustun. Yechim: `EnvironmentPostProcessor` (`Ordered.HIGHEST_PRECEDENCE`, ConfigData dan oldin)
+  OS env ni o'qib `addFirst(MapPropertySource(spring.profiles.active=...))` qiladi va bosilgan qiymatni DeferredLog
+  ga yozadi. Tekshiruv: fat jarni `MY_PROFILE=a -Dspring.profiles.active=b SPRING_PROFILES_ACTIVE=c` bilan yurgizib,
+  `profile is active: "a"` ni ko'rish. EPP ichida start to'xtasa DeferredLog chiqmaydi, xato xabarining o'zi
+  profilni aytsin.
