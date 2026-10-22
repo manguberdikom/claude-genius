@@ -50,6 +50,7 @@ Token va parol hech qayerga chop etilmaydi.
 
 import argparse
 import base64
+import datetime
 import hashlib
 import json
 import os
@@ -539,6 +540,76 @@ def new_code_action(remote, local):
     return ("set", remote["type"], remote.get("value", ""))
 
 
+def server_period(remote, key):
+    """Asosiy serverning new code davri: {'type', 'value', 'date', 'source'}.
+    Avval `new_code_periods/show`; token huquqi yetmasa (403) `project_status` dagi
+    `period` (mode, parameter). `date` doim `project_status` dan. Ikkalasi ham
+    o'qilmasa Fail."""
+    quoted, errors = urllib.parse.quote(key), []
+    period = {"type": "", "value": "", "date": "", "source": ""}
+    try:
+        shown = remote.get("/api/new_code_periods/show?project=" + quoted)
+        period.update(type=shown.get("type", ""), value=shown.get("value", ""), source="new_code_periods")
+    except Fail as err:
+        errors.append(str(err))
+    try:
+        status = remote.get("/api/qualitygates/project_status?projectKey=" + quoted)
+        found = status.get("projectStatus", {}).get("period") or {}
+    except Fail as err:
+        errors.append(str(err))
+        found = {}
+    if not period["type"] and found.get("mode"):
+        mode = found["mode"].upper()
+        period.update(type=mode, value="" if mode == "PREVIOUS_VERSION" else found.get("parameter", ""),
+                      source="project_status")
+    period["date"] = found.get("date", "")
+    if not period["type"] and not period["date"]:
+        raise Fail("; ".join(errors) or "serverda new code davri yo'q")
+    return period
+
+
+def parse_sonar_time(text):
+    """`2026-10-11T01:08:17+0000` (ms, `+00:00` va `Z` ham) -> aware datetime. Xato: ValueError."""
+    text = re.sub(r"\.\d+", "", text.strip())
+    text = re.sub(r"Z$", "+0000", text)
+    text = re.sub(r"([+-]\d\d):(\d\d)$", r"\1\2", text)
+    return datetime.datetime.strptime(text, "%Y-%m-%dT%H:%M:%S%z")
+
+
+def new_code_issues(all_open, local_new, date):
+    """Darvozaga kiradigan yangi kod issue lari. `date` (server davri sanasi) bo'lsa:
+    lokal `inNewCodePeriod` va `creationDate >= date` birlashmasi (teng sana yangi;
+    sanasi o'qilmagan issue ham yangi). `date` bo'sh yoki yaroqsiz: fail-closed, hamma ochiq."""
+    try:
+        since = parse_sonar_time(date)
+    except (ValueError, AttributeError):
+        return list(all_open)
+    flagged = {i["key"] for i in local_new}
+
+    def is_new(issue):
+        if issue["key"] in flagged:
+            return True
+        try:
+            return parse_sonar_time(issue["creationDate"]) >= since
+        except (KeyError, ValueError):
+            return True
+    return [i for i in all_open if is_new(i)]
+
+
+def period_line(period, error=""):
+    """tahlil chiqishidagi new code davri qatori."""
+    if period is None or not period.get("date"):
+        return "new code davri o'qilmadi (%s): fail-closed, hamma ochiq issue darvozaga kiradi" % (
+            error or "sana yo'q")
+    line = ("new code davri: server %s%s (sana %s, manba %s); yangi kod = lokal inNewCodePeriod "
+            "yoki creationDate >= shu sana" % (
+                period["type"] or "?", " " + period["value"] if period.get("value") else "",
+                period["date"], period["source"] or "project_status"))
+    if period["type"] == "PREVIOUS_VERSION":
+        line += ". PREVIOUS_VERSION lokal bitta tahlilda ma'nosiz, shuning uchun sana filtri ishlatildi"
+    return line
+
+
 def match_issues(remote_issues, local_open):
     """Asosiy serverda qo'lda ACCEPTED/FALSE_POSITIVE qilingan issue lar:
     [(lokal kalit, o'tish)]. Moslik: qoida + fayl + qator."""
@@ -607,8 +678,9 @@ def check_profiles(remote, admin, key, state, fixed, unchecked):
             label, want[1], have[1], " [built-in: versiya farqi]" if prof.get("isBuiltIn") else ""))
 
 
-def do_moslik(key):
-    """Konfiguratsiyani tenglashtiradi. (tuzatilgan, tekshirib_bo'lmagan)."""
+def do_moslik(key, notes=None):
+    """Konfiguratsiyani tenglashtiradi. (tuzatilgan, tekshirib_bo'lmagan).
+    `notes` ro'yxatiga ma'lumot qatorlari qo'shiladi (ular tekshirib bo'lmaganlar emas)."""
     fixed, unchecked = [], []
     try:
         remote = Remote()
@@ -657,7 +729,7 @@ def do_moslik(key):
     except Fail as err:
         unchecked.append("loyiha sozlamalari (%s)" % err)
     try:
-        r_nc = remote.get("/api/new_code_periods/show?project=" + urllib.parse.quote(key))
+        r_nc = server_period(remote, key)
         l_nc = api(local_url(), "/api/new_code_periods/show?project=" + urllib.parse.quote(key), admin)
         act = new_code_action(r_nc, l_nc)
         if act and act[0] == "set":
@@ -668,6 +740,9 @@ def do_moslik(key):
             fixed.append("new code davri %s" % act[1])
         elif act:
             unchecked.append(act[1])
+        if notes is not None and r_nc["type"] == "PREVIOUS_VERSION":
+            notes.append("new code davri %s (manba %s): PREVIOUS_VERSION lokal bitta tahlilda ma'nosiz, "
+                         "tahlilda sana filtri ishlatiladi" % (r_nc["date"] or "?", r_nc["source"]))
     except Fail as err:
         unchecked.append("new code davri (%s)" % err)
     unchecked.append("scanner konteksti (JDK, env) ko'rinmaydi")
@@ -706,7 +781,8 @@ def moslik_line(fixed, unchecked):
 def cmd_moslik(args):
     key = resolve_key(args.loyiha, os.getcwd())
     summary, notes = ensure_running()
-    fixed, unchecked = do_moslik(key)
+    notes = []
+    fixed, unchecked = do_moslik(key, notes)
     state = load_state()
     try:
         n_issue, n_hot, note = sync_statuses(Remote(), "admin:" + state["password"], key)
@@ -717,6 +793,8 @@ def cmd_moslik(args):
     except (Fail, sonar_fetch.Config) as err:
         unchecked.append("statuslar (%s)" % err)
     say("sonar_local: " + moslik_line(fixed, unchecked))
+    for note in notes:
+        say("sonar_local: moslik: " + note)
     return 0
 
 
@@ -1010,8 +1088,15 @@ def cmd_tahlil(args):
     base = local_url()
     gate = api(base, "/api/qualitygates/project_status?projectKey=" + urllib.parse.quote(key), admin)
     gate_status = gate.get("projectStatus", {}).get("status", "?")
-    issues = open_issues(base, admin, key, new_code=True)
-    old = len(open_issues(base, admin, key)) - len(issues)
+    all_open = open_issues(base, admin, key)
+    try:
+        period, period_error = server_period(remote, key), ""
+    except Fail as err:
+        period, period_error = None, str(err)
+    say("tahlil: " + period_line(period, period_error))
+    issues = new_code_issues(all_open, open_issues(base, admin, key, new_code=True),
+                             period["date"] if period else "")
+    old = len(all_open) - len(issues)
     todo = hotspots_of(base, admin, key, "TO_REVIEW")
     done = hotspots_of(base, admin, key, "REVIEWED")
     cov = {m["metric"]: m.get("value") for m in api(

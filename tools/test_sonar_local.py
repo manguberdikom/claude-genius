@@ -354,6 +354,89 @@ def case_moslik():
     ]
 
 
+class FakeRemote:
+    """Asosiy server: yo'l boshiga qarab javob yoki Fail (HTTP xatosi)."""
+
+    def __init__(self, routes):
+        self.routes = routes
+
+    def get(self, path, raw=False):
+        for prefix, answer in self.routes.items():
+            if path.startswith(prefix):
+                if isinstance(answer, Exception):
+                    raise answer
+                return answer
+        raise sl.Fail("HTTP 404: " + path)
+
+
+SHOW = "/api/new_code_periods/show"
+STATUS = "/api/qualitygates/project_status"
+STATUS_OK = {"projectStatus": {"period": {"mode": "PREVIOUS_VERSION", "date": "2026-10-11T01:08:17+0000",
+                                            "parameter": "0.1.44"}}}
+
+
+def case_new_code_davri():
+    denied = sl.Fail("HTTP 403: host/api/new_code_periods/show")
+    shown = {"type": "NUMBER_OF_DAYS", "value": "30"}
+    via_status = sl.server_period(FakeRemote({SHOW: denied, STATUS: STATUS_OK}), "k")
+    via_show = sl.server_period(FakeRemote({SHOW: shown, STATUS: STATUS_OK}), "k")
+    days = sl.server_period(FakeRemote({SHOW: denied, STATUS: {"projectStatus": {"period": {
+        "mode": "NUMBER_OF_DAYS", "date": "2026-10-01T00:00:00+0000", "parameter": "30"}}}}), "k")
+    no_date = sl.server_period(FakeRemote({SHOW: shown, STATUS: denied}), "k")
+    try:
+        sl.server_period(FakeRemote({SHOW: denied, STATUS: denied}), "k")
+        both_fail = False
+    except sl.Fail as err:
+        both_fail = "403" in str(err)
+    return [
+        ("403 da project_status davri: tur, sana, qiymat",
+         (via_status["type"], via_status["value"], via_status["date"], via_status["source"])
+         == ("PREVIOUS_VERSION", "", "2026-10-11T01:08:17+0000", "project_status")),
+        ("403 da NUMBER_OF_DAYS qiymati parameter dan",
+         (days["type"], days["value"]) == ("NUMBER_OF_DAYS", "30")),
+        ("show ishlasa tur show dan, sana project_status dan",
+         (via_show["type"], via_show["value"], via_show["source"], via_show["date"])
+         == ("NUMBER_OF_DAYS", "30", "new_code_periods", "2026-10-11T01:08:17+0000")),
+        ("project_status ham yiqilsa show turi qoladi, sana yo'q", no_date["type"] == "NUMBER_OF_DAYS"
+         and no_date["date"] == ""),
+        ("ikkalasi ham yiqilsa Fail", both_fail),
+        ("fallback turi new_code_action ga mos: lokal teng bo'lsa harakat yo'q",
+         sl.new_code_action(via_status, {"type": "PREVIOUS_VERSION", "value": ""}) is None),
+        ("sana yo'q: davr qatori fail-closed", "fail-closed" in sl.period_line(no_date)
+         and "fail-closed" in sl.period_line(None, "HTTP 403")),
+        ("PREVIOUS_VERSION qatori ma'nosizligini aytadi", "ma'nosiz" in sl.period_line(via_status)
+         and "ma'nosiz" not in sl.period_line(via_show)),
+    ]
+
+
+def case_yangi_issue():
+    def issue(key, created):
+        return {"key": key, "creationDate": created}
+
+    since = "2026-10-11T01:08:17+0000"
+    old = issue("old", "2026-10-11T01:08:16+0000")
+    edge = issue("edge", "2026-10-11T01:08:17+0000")
+    later = issue("later", "2026-10-20T10:00:00+0000")
+    zone = issue("zone", "2026-10-11T06:08:17+0500")
+    flagged = issue("flagged", "2026-01-01T00:00:00+0000")
+    broken = {"key": "broken"}
+    keys = lambda items: [i["key"] for i in items]
+    got = sl.new_code_issues([old, edge, later, flagged], [flagged], since)
+    return [
+        ("chegarada teng sana yangi, bir soniya oldin eski",
+         keys(sl.new_code_issues([old, edge], [], since)) == ["edge"]),
+        ("keyingi sana yangi", keys(sl.new_code_issues([old, later], [], since)) == ["later"]),
+        ("vaqt zonasi hisobga olinadi (+0500 = 01:08:17 UTC)", keys(sl.new_code_issues([zone], [], since)) == ["zone"]),
+        ("lokal inNewCodePeriod bilan birlashma", keys(got) == ["edge", "later", "flagged"]),
+        ("ikki marta sanalmaydi", len(got) == len(set(keys(got)))),
+        ("creationDate yo'q: yangi (fail-closed)", keys(sl.new_code_issues([broken], [], since)) == ["broken"]),
+        ("davr sanasi yo'q: hamma ochiq issue yangi", keys(sl.new_code_issues([old, edge], [], "")) == ["old", "edge"]),
+        ("davr sanasi yaroqsiz: hamma ochiq", keys(sl.new_code_issues([old], [], "kecha")) == ["old"]),
+        ("ms va Z formati o'qiladi", sl.parse_sonar_time("2026-10-11T01:08:17.123Z")
+         == sl.parse_sonar_time("2026-10-11T01:08:17+00:00")),
+    ]
+
+
 SECTIONS = [
     ("Loyiha kaliti", case_kalit),
     ("report-task.txt", case_report_task),
@@ -367,6 +450,8 @@ SECTIONS = [
     ("Buyruq, muhit, holat", case_buyruq_va_holat),
     ("Sir chiqmaydi", case_sir),
     ("Moslik (tarmoqsiz)", case_moslik),
+    ("New code davri (server)", case_new_code_davri),
+    ("Yangi kod issue lari", case_yangi_issue),
 ]
 
 

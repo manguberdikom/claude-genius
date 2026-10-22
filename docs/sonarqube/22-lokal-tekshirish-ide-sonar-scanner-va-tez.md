@@ -407,6 +407,8 @@ Birinchi marta ko'zgu to'g'riligini dalil bilan ko'rish kerak: bir commit uchun 
 
 Bu ish `tools/sonar_local.py` da: `ishga` (konteyner), `sozla` (parol, token, profil, gate), `moslik` (farqni topib tuzatish), `tahlil` (to'liq tahlil va natija), `solishtir` (server bilan solishtirish).
 
+New code davri avval `new_code_periods/show` dan o'qiladi; token huquqi yetmasa (403) `qualitygates/project_status` dagi `period` ishlatiladi. Lokal konteynerda loyihaning birinchi tahlilida `inNewCodePeriod` bo'sh qoladi, shuning uchun `tahlil` yangi kod issue ini server davri sanasidan (`creationDate >= sana`) va lokal `inNewCodePeriod` birlashmasidan sanaydi. Davr o'qilmasa hamma ochiq issue darvozaga kiradi va chiqishda shu aytiladi.
+
 ## 22.12 Amalda qo'llash
 
 - [ ] IDE ga SonarQube for IDE pluginini o'rnat va server bilan connected mode ni yoq, shundan keyin IDE profili server profiliga mos keladi.
