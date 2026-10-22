@@ -29,3 +29,5 @@ Barcha proyektlarga. Bir yozuv bir qator, nom mavzuni aytadi.
 - `feedback_parallel-it-fake-thread-safe.md` - parallel IT fake poygasi
 - `feedback_sonar-lokal-hotspot-qator-siljishi.md` - lokal hotspot qatori surildi
 - `feedback_s5443-zip-tekshiruvi-xotirada.md` - temp faylsiz zip tekshiruvi
+- `feedback_test-context-oqishi.md` - IT context keshi orasidagi oqish
+- `feedback_sonar-tavsiya-semantika.md` - Sonar tavsiyasi xulqni o'zgartiradi
