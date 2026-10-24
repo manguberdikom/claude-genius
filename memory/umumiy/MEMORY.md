@@ -32,3 +32,4 @@ Barcha proyektlarga. Bir yozuv bir qator, nom mavzuni aytadi.
 - `feedback_test-context-oqishi.md` - IT context keshi orasidagi oqish
 - `feedback_sonar-tavsiya-semantika.md` - Sonar tavsiyasi xulqni o'zgartiradi
 - `feedback_profil-ajratish-tuzoqlari.md` - base nomi, origin lookup, oddiy jar exclude
+- `feedback_worktree-stash-umumiy.md` - stash worktree lar orasida umumiy
