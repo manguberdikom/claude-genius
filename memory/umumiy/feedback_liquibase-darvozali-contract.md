@@ -10,4 +10,5 @@ type: feedback
 - Ikkinchi bosqich DROP ni birinchi contract markeriga bog'lang (zanjir: N, N+X, N+2X).
 - Marker id ni changeset faylidan **aynan** oling. Parallel guruhda kartadagi nom bilan yozilgan id konvensiya talabi (id = fayl slugi bilan boshlanadi) tufayli boshqacha chiqdi; mos kelmasa darvoza jim va abadiy yopiq qoladi. Birlashtirishdan oldin `grep` bilan solishtiring.
 - Xavf: ilova oldingi versiyaga rollback qilinsa va N kun o'tib yangi deploy bo'lsa, rolling oynada eski pod DROP qilingan ustunni o'qiydi. Reliz izohiga yozing.
+- "Faqat dev da, rolling oyna yo'q" degan faraz noto'g'ri: dev da ham yangi pod Liquibase ni yurgizayotganda eski pod ishlaydi va uning scheduler i (`SELECT *` bilan entity o'qiydi) `Unable to find column position by name: <ustun>` beradi. Yangi pod Ready bo'lib eski pod to'xtagach xato o'zi to'xtaydi; kod tuzatilmaydi, qo'llangan changeset checksum sababli o'zgartirilmaydi. Xato to'xtamasa sabab yangi podning startup xatosi.
 - PostgreSQL: `ADD CONSTRAINT c UNIQUE USING INDEX i` indeksni `c` nomiga qayta nomlaydi; test eski indeks nomini kutmasin.
