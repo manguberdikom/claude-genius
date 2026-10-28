@@ -1961,6 +1961,484 @@ def case_muhim_setter():
     return rows
 
 
+# --- Ortiqchalik darvozasi: mapper ignore, Void kolleksiya, Contexts -----------
+
+def mapper(body, head='@Mapper(componentModel = "spring")\n', kind="interface"):
+    return "package shop;\n" + head + kind + " UserMapper {\n" + body + "\n}\n"
+
+
+MAPPER_CASES = [
+    # (nom, kod, yo'l, kutilgan topilmalar soni)
+    ("Dto qaytaradigan metodda ignore", mapper(
+        '  @Mapping(target = "secret", ignore = true)\n  UserDto toDto(User u);'), MAIN, 1),
+    ("Response qaytaradigan metodda ignore", mapper(
+        '  @Mapping(target = "x", ignore = true)\n  UserResponse toResponse(User u);'), MAIN, 1),
+    ("View qaytaradigan metodda ignore", mapper(
+        '  @Mapping(target = "x", ignore = true)\n  UserView toView(User u);'), MAIN, 1),
+    ("DTO (bosh harf) qaytaradigan metodda ignore", mapper(
+        '  @Mapping(target = "x", ignore = true)\n  UserDTO toDto(User u);'), MAIN, 1),
+    ("abstract sinf mapperi", mapper(
+        '  @Mapping(target = "x", ignore = true)\n  public abstract UserDto toDto(User u);',
+        kind="abstract class"), MAIN, 1),
+    ("ikkita ignore ikki topilma", mapper(
+        '  @Mapping(target = "a", ignore = true)\n  @Mapping(target = "b", ignore = true)\n'
+        '  UserDto toDto(User u);'), MAIN, 2),
+    ("@Mappings ichida faqat ignore sanaladi", mapper(
+        '  @Mappings({\n    @Mapping(target = "a", ignore = true),\n'
+        '    @Mapping(target = "b", source = "x")\n  })\n  UserDto toDto(User u);'), MAIN, 1),
+    ("source bilan mapping toza", mapper(
+        '  @Mapping(target = "name", source = "fullName")\n  UserDto toDto(User u);'), MAIN, 0),
+    ("update metodi (@MappingTarget) himoya", mapper(
+        '  @Mapping(target = "id", ignore = true)\n  void update(UserDto d, @MappingTarget User u);'),
+     MAIN, 0),
+    ("@MappingTarget va DTO qaytaradigan update ham himoya", mapper(
+        '  @Mapping(target = "id", ignore = true)\n'
+        '  UserDto update(User u, @MappingTarget UserDto d);'), MAIN, 0),
+    ("@BeanMapping(ignoreByDefault) himoya", mapper(
+        '  @BeanMapping(ignoreByDefault = true)\n  @Mapping(target = "id", ignore = true)\n'
+        '  UserDto toDto(User u);'), MAIN, 0),
+    ("entity qaytaradigan metod (id ni ignore) toza", mapper(
+        '  @Mapping(target = "id", ignore = true)\n  User toEntity(UserCreateRequest r);'), MAIN, 0),
+    ("so'rov DTO si qaytaradigan metod toza", mapper(
+        '  @Mapping(target = "id", ignore = true)\n  UserCreateRequest toRequest(User u);'),
+     MAIN, 0),
+    ("ignore = false toza", mapper(
+        '  @Mapping(target = "x", ignore = false)\n  UserDto toDto(User u);'), MAIN, 0),
+    ("ignore siz mapper toza", mapper("  UserDto toDto(User u);"), MAIN, 0),
+    ("@AfterMapping bor mapper: maydon shu yerda to'ldirilishi mumkin", mapper(
+        '  @Mapping(target = "x", ignore = true)\n  UserDto toDto(User u);\n'
+        '  @AfterMapping\n  default void fill(@MappingTarget UserDto d) { d.setX(1); }'), MAIN, 0),
+    ("@Mapper emas (boshqa sinf) toza", 'class A {\n  @Mapping(target = "x", ignore = true)\n'
+     "  UserDto toDto(User u);\n}\n", MAIN, 0),
+    ("izohdagi ignore toza", mapper(
+        '  // @Mapping(target = "x", ignore = true)\n  UserDto toDto(User u);'), MAIN, 0),
+    ("test faylida tekshirilmaydi", mapper(
+        '  @Mapping(target = "x", ignore = true)\n  UserDto toDto(User u);'), TEST, 0),
+]
+
+VOID_CASES = [
+    # (nom, kod, yo'l, kutilgan topilmalar soni)
+    ("List<Void> maydon", wrap("private List<Void> items;"), MAIN, 1),
+    ("Set<Void> maydon", wrap("private final Set<Void> items = new HashSet<>();"), MAIN, 1),
+    ("Collection<Void> maydon", wrap("Collection<Void> items;"), MAIN, 1),
+    ("Optional<Void> maydon", wrap("private Optional<Void> value;"), MAIN, 1),
+    ("Map<String, Void> maydon", wrap("private Map<String, Void> byName;"), MAIN, 1),
+    ("Map<?, Void> maydon", wrap("private Map<?, Void> byName;"), MAIN, 1),
+    ("Map<List<String>, Void> maydon", wrap("private Map<List<String>, Void> byKey;"), MAIN, 1),
+    ("qaytish turi", wrap("List<Void> load() { return List.of(); }"), MAIN, 1),
+    ("record komponenti", "record R(String id, List<Void> rows) {}\n", MAIN, 1),
+    ("java.util.List<Void>", wrap("private java.util.List<Void> items;"), MAIN, 1),
+    ("test faylida ham", wrap("private List<Void> items;"), TEST, 1),
+    ("CompletableFuture<Void> toza", wrap("private CompletableFuture<Void> done;"), MAIN, 0),
+    ("Mono<Void> qaytish turi toza", wrap("Mono<Void> save() { return Mono.empty(); }"), MAIN, 0),
+    ("List<CompletableFuture<Void>> toza",
+     wrap("private List<CompletableFuture<Void>> tasks;"), MAIN, 0),
+    ("List<String> toza", wrap("private List<String> items;"), MAIN, 0),
+    ("Map<Void, String> (Void kalit) tegilmaydi", wrap("private Map<Void, String> m;"), MAIN, 0),
+    ("izohdagi List<Void> toza", wrap("// private List<Void> items;\nint a;"), MAIN, 0),
+    ("satr ichidagi List<Void> toza", wrap('String s = "List<Void> items;";'), MAIN, 0),
+]
+
+CONTEXTS_CASES = [
+    # (nom, kod, yo'l, kutilgan topilmalar soni)
+    ("new Contexts()", wrap("void f() { liquibase.update(new Contexts(), out); }"), MAIN, 1),
+    ('new Contexts("")', wrap('void f() { liquibase.update(new Contexts(""), out); }'), MAIN, 1),
+    ("liquibase.Contexts to'liq nomi bilan",
+     wrap("void f() { liquibase.update(new liquibase.Contexts(), out); }"), MAIN, 1),
+    ('new Contexts("default") toza',
+     wrap('void f() { liquibase.update(new Contexts("default"), out); }'), MAIN, 0),
+    ('new Contexts("a,b") toza',
+     wrap('void f() { liquibase.update(new Contexts("a,b"), out); }'), MAIN, 0),
+    ("o'zgaruvchi bilan toza",
+     wrap("void f(String ctx) { liquibase.update(new Contexts(ctx), out); }"), MAIN, 0),
+    ("izohdagi new Contexts() toza",
+     wrap("void f() { // liquibase.update(new Contexts(), out);\n}"), MAIN, 0),
+    ("test faylida tekshirilmaydi",
+     wrap("void f() { liquibase.update(new Contexts(), out); }"), TEST, 0),
+]
+
+
+def case_ortiqcha_java():
+    rows = []
+    for cases, part, level in ((MAPPER_CASES, "mapperda ignore", "o'rta"),
+                               (VOID_CASES, "doim bo'sh tur", "yuqori"),
+                               (CONTEXTS_CASES, "bo'sh Liquibase konteksti", "yuqori")):
+        for name, code, path, expect in cases:
+            got = [f for f in check_code.check_text(code, path) if part in f.message]
+            rows.append(("%s (topildi: %d)" % (name, len(got)),
+                         len(got) == expect and all(f.level == level for f in got)))
+    one = [f for f in check_code.check_text(MAPPER_CASES[0][1], MAIN) if "mapperda" in f.message]
+    rows.append(("mapper topilmasi maydon nomi va tur nomini aytadi",
+                 "`secret`" in one[0].message and "`UserDto`" in one[0].message))
+    rows.append(("mapper topilmasi ignore annotatsiyasi qatorida", one[0].line == 4))
+    void = [f for f in check_code.check_text(VOID_CASES[0][1], MAIN) if "bo'sh tur" in f.message]
+    rows.append(("Void topilmasi tur nomini aytadi", "`List<Void>`" in void[0].message))
+    return rows
+
+
+# --- Liquibase changelog YAML ---------------------------------------------------
+
+def changelog(*sets):
+    return "databaseChangeLog:\n" + "".join(sets)
+
+
+def change_set(ident, sql, head="", pre=""):
+    """Bitta changeSet; `sql` ko'p qatorli blok skalyar tanasi."""
+    body = "".join("              %s\n" % line for line in sql.split("\n"))
+    return ("  - changeSet:\n      id: %s\n      author: dev\n%s%s"
+            "      changes:\n        - sql:\n            sql: |\n%s"
+            % (ident, head, pre, body))
+
+
+LOCK_PREFIX = "SET LOCAL lock_timeout = '3s';\n"
+NO_TX = "      runInTransaction: false\n"
+YAML_CASES = [
+    # (nom, yaml, [(daraja, qator, ref)])
+    ("ALTER TABLE lock_timeout siz", changelog(
+        change_set("a", "ALTER TABLE t ADD COLUMN x int;")),
+     [("o'rta", 8, "architect 33.5")]),
+    ("ALTER TABLE lock_timeout bilan", changelog(
+        change_set("a", LOCK_PREFIX + "ALTER TABLE t ADD COLUMN x int;")), []),
+    ("ALTER TABLE, runInTransaction: false", changelog(
+        change_set("a", "ALTER TABLE t ADD COLUMN x int;", head=NO_TX)), []),
+    ("DROP TABLE lock_timeout siz", changelog(change_set("a", "DROP TABLE t;")),
+     [("o'rta", 8, "architect 33.5")]),
+    ("CREATE INDEX (CONCURRENTLY siz)", changelog(
+        change_set("a", "CREATE INDEX idx_a ON t (a);")), [("o'rta", 8, "architect 33.5")]),
+    ("UPDATE statement boshida", changelog(change_set("a", "UPDATE t SET a = 1;")),
+     [("o'rta", 8, "architect 33.5")]),
+    ("DELETE FROM statement boshida", changelog(change_set("a", "DELETE FROM t WHERE a = 1;")),
+     [("o'rta", 8, "architect 33.5")]),
+    ("ikkinchi qatordagi ALTER TABLE: qator raqami", changelog(
+        change_set("a", "SELECT 1;\nALTER TABLE t ADD COLUMN x int;")),
+     [("o'rta", 9, "architect 33.5")]),
+    ("INSERT va SELECT toza", changelog(change_set("a", "INSERT INTO t VALUES (1);\nSELECT 1;")), []),
+    ("SELECT ... FOR UPDATE toza", changelog(change_set("a", "SELECT * FROM t FOR UPDATE;")), []),
+    ("ON CONFLICT DO UPDATE SET toza", changelog(
+        change_set("a", "INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET a = 1;")), []),
+    ("SQL izohidagi ALTER TABLE toza", changelog(
+        change_set("a", "-- ALTER TABLE t DROP COLUMN x;\nSELECT 1;")), []),
+    ("SQL satridagi 'drop table' toza", changelog(
+        change_set("a", "INSERT INTO t VALUES ('drop table x; update y');")), []),
+    ("rollback ichidagi DROP tekshirilmaydi", changelog(
+        change_set("a", "SELECT 1;") + "      rollback:\n        - sql:\n"
+        "            sql: DROP TABLE t;\n"), []),
+    ("preConditions ichidagi UPDATE tekshirilmaydi", changelog(
+        change_set("a", "SELECT 1;", pre="      preConditions:\n        - sqlCheck:\n"
+                   "            expectedResult: 1\n"
+                   "            sql: SELECT 1 FROM t FOR UPDATE\n")), []),
+    ("comment ichidagi ALTER TABLE tekshirilmaydi", changelog(
+        change_set("a", "SELECT 1;", head="      comment: ALTER TABLE t ADD x\n")), []),
+    ("CONCURRENTLY kontekstsiz", changelog(
+        change_set("a", "CREATE INDEX CONCURRENTLY idx_a ON t (a);", head=NO_TX)),
+     [("o'rta", 9, "architect 33.8")]),
+    ("CONCURRENTLY context bilan", changelog(
+        change_set("a", "CREATE INDEX CONCURRENTLY idx_a ON t (a);",
+                   head=NO_TX + "      context: concurrent\n")), []),
+    ("CONCURRENTLY contextFilter bilan", changelog(
+        change_set("a", "CREATE INDEX CONCURRENTLY idx_a ON t (a);",
+                   head=NO_TX + "      contextFilter: concurrent\n")), []),
+    ("DROP INDEX CONCURRENTLY kontekstsiz", changelog(
+        change_set("a", "DROP INDEX CONCURRENTLY idx_a;", head=NO_TX)),
+     [("o'rta", 9, "architect 33.8")]),
+    ("VACUUM FULL kontekstsiz", changelog(
+        change_set("a", "VACUUM FULL t;", head=NO_TX)),
+     [("o'rta", 9, "architect 33.8")]),
+    ("VALIDATE CONSTRAINT kontekstsiz", changelog(
+        change_set("a", LOCK_PREFIX + "ALTER TABLE t VALIDATE CONSTRAINT c;")),
+     [("o'rta", 9, "architect 33.8")]),
+    ("ATTACH PARTITION kontekstsiz", changelog(
+        change_set("a", LOCK_PREFIX + "ALTER TABLE t ATTACH PARTITION p FOR VALUES IN (1);")),
+     [("o'rta", 9, "architect 33.8")]),
+    ("vaqt darvozasi databasechangelog bilan", changelog(
+        change_set("a", "SELECT 1;", pre="      preConditions:\n        - sqlCheck:\n"
+                   "            expectedResult: 0\n            sql: |\n"
+                   "              SELECT count(*) FROM databasechangelog\n"
+                   "              WHERE dateexecuted > now() - interval '30 days'\n")),
+     [("past", 10, "architect 33.3")]),
+    ("interval databasechangelog siz toza", changelog(
+        change_set("a", "SELECT 1;", pre="      preConditions:\n        - sqlCheck:\n"
+                   "            expectedResult: 0\n"
+                   "            sql: SELECT count(*) FROM t WHERE c > now() - interval '30 days'\n")),
+     []),
+    ("databasechangelog interval siz toza", changelog(
+        change_set("a", "SELECT 1;", pre="      preConditions:\n        - sqlCheck:\n"
+                   "            expectedResult: 1\n"
+                   "            sql: SELECT count(*) FROM databasechangelog WHERE id = 'x'\n")),
+     []),
+    ("faqat ikkinchi changeSet buzuq", changelog(
+        change_set("a", LOCK_PREFIX + "ALTER TABLE t ADD COLUMN x int;"),
+        change_set("b", "DROP TABLE t;")),
+     [("o'rta", 16, "architect 33.5")]),
+    ("bir qatorli sql: qiymati", changelog(
+        "  - changeSet:\n      id: a\n      author: dev\n      changes:\n"
+        "        - sql:\n            sql: ALTER TABLE t ADD COLUMN x int\n"),
+     [("o'rta", 7, "architect 33.5")]),
+    ("sql siz changeSet toza", changelog(
+        "  - changeSet:\n      id: a\n      author: dev\n      changes:\n"
+        "        - addColumn:\n            tableName: t\n"), []),
+]
+
+
+def case_changelog_yaml():
+    rows = []
+    for name, text, expect in YAML_CASES:
+        got = [(f.level, f.line, f.ref) for f in check_code.check_changelog(text)]
+        rows.append(("%s (topildi: %d)" % (name, len(got)), got == expect))
+    crlf = check_code.check_changelog(YAML_CASES[0][1].replace("\n", "\r\n"))
+    rows.append(("CRLF bilan ham bir xil qator raqami",
+                 [(f.line, f.ref) for f in crlf] == [(8, "architect 33.5")]))
+    found = check_code.check_changelog(YAML_CASES[0][1])
+    rows.append(("topilma changeSet id sini aytadi", "changeSet `a`" in found[0].message))
+    import docref
+    titles = section_titles()
+    for ref, word in (("architect 33.1", "migratsiya vositalari"),
+                      ("architect 33.3", "expand and contract"),
+                      ("architect 33.5", "qaysi ddl jadvalni bloklaydi"),
+                      ("architect 33.8", "concurrently"),
+                      ("clean-code 35.18", "o'lik kod")):
+        rows.append(("%s indeksda va mavzuga mos" % ref,
+                     docref.by_ref(ref) == ref
+                     and word in titles.get(tuple(ref.split()), "").lower()))
+    return rows
+
+
+def case_changelog_yoli():
+    """check_paths: faqat changelog yo'lli va databaseChangeLog li yaml tekshiriladi."""
+    bad = YAML_CASES[0][1]
+    clean = YAML_CASES[1][1]
+    changelog_dir = "src/main/resources/db/changelog/"
+    root, paths = _project({
+        changelog_dir + "bad.yaml": bad,
+        changelog_dir + "clean.yml": clean,
+        changelog_dir + "plain.yaml": "key: value\n",
+        "src/main/resources/application.yml": "databaseChangeLog: []\nserver:\n  port: 1\n",
+        "src/main/resources/changes/x.yaml": bad,
+        "src/main/java/shop/Ok.java": "package shop;\nclass Ok {}\n",
+    })
+    try:
+        code_bad, out_bad = run_file(paths[changelog_dir + "bad.yaml"])
+        code_clean, out_clean = run_file(paths[changelog_dir + "clean.yml"])
+        code_plain, out_plain = run_file(paths[changelog_dir + "plain.yaml"])
+        code_app, out_app = run_file(paths["src/main/resources/application.yml"])
+        code_changes, _ = run_file(paths["src/main/resources/changes/x.yaml"])
+        code_many, out_many = run_file(
+            paths["src/main/java/shop/Ok.java"], paths[changelog_dir + "bad.yaml"],
+            paths[changelog_dir + "clean.yml"], paths["src/main/resources/application.yml"])
+        raw_hook = run_hook(paths[changelog_dir + "bad.yaml"])
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+    return [
+        ("buzuq changelog: rc 1 va qator raqami",
+         code_bad == 1 and "bad.yaml: 1 ta qoida buzilishi" in out_bad
+         and "bad.yaml:8  changeSet `a`" in out_bad),
+        ("topilma qo'llanma havolasi bilan",
+         "doc.sh show architect 33.5" in out_bad),
+        ("toza changelog: rc 0", code_clean == 0 and "topilmadi" in out_clean),
+        ("databaseChangeLog siz yaml: tekshirilmadi, rc 3",
+         code_plain == 3 and "tekshirilmadi (faqat .java)" in out_plain),
+        ("changelog yo'lsiz application.yml: tekshirilmadi, rc 3",
+         code_app == 3 and "tekshirilmadi" in out_app),
+        ("changes/ yo'li ham changelog", code_changes == 1),
+        ("ko'p fayl: yig'ma qator java va yaml ni sanaydi",
+         code_many == 1 and "check_code: 3 fayl, 1 buzilish" in out_many
+         and "application.yml: tekshirilmadi" in out_many),
+        ("hook yaml da jim (faqat CLI)", raw_hook == ""),
+    ]
+
+
+# --- Bog'lanmagan konfiguratsiya kaliti ------------------------------------------
+
+def unbound(files):
+    """Modul fayllari -> bog'lanmagan kalitlar to'plami."""
+    root, _ = _project(files)
+    try:
+        found, _ = check_code.check_config_keys(root)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+    return {f.message.split("`")[1] for fs in found.values() for f in fs}
+
+
+RES = "src/main/resources/application.yml"
+JAVA = "src/main/java/shop/"
+EMPTY_CLASS = "package shop;\nclass S {}\n"
+VALUE_A = 'package shop;\nclass S { @Value("${app.a}") int a; }\n'
+PAY_PROPS = ('package shop;\n@ConfigurationProperties(prefix = "app.pay")\n'
+             "public class PayProps {\n  private String baseUrl;\n  private int maxRetries;\n"
+             "  private Map<String, Integer> limits;\n  private List<String> hosts;\n"
+             "  private Card card;\n  private static final String X = \"a\";\n"
+             "  public static class Card { private int limit; }\n}\n")
+PAY_YAML = ("app:\n  pay:\n    base-url: http://x\n    max-retries: 3\n"
+            "    limits:\n      daily: 5\n    hosts:\n      - a\n      - b\n"
+            "    card:\n      limit: 1\n")
+
+CONFIG_CASES = [
+    # (nom, {yo'l: matn}, kutilgan bog'lanmagan kalitlar)
+    ("@ConfigurationProperties: kebab-case va camelCase", {
+        RES: PAY_YAML + "    unused-flag: true\n", JAVA + "PayProps.java": PAY_PROPS},
+     {"app.pay.unused-flag"}),
+    ("snake_case va katta-kichik harf farqi", {
+        RES: "app:\n  pay:\n    BASE_URL: x\n    maxRetries: 1\n",
+        JAVA + "PayProps.java": PAY_PROPS}, set()),
+    ("ichki sinf maydoni: bog'langan va bog'lanmagan", {
+        RES: PAY_YAML + "      bogus: 2\n", JAVA + "PayProps.java": PAY_PROPS},
+     {"app.pay.card.bogus"}),
+    ("Map maydon ostidagi kalit bog'langan", {
+        RES: "app:\n  pay:\n    limits:\n      daily: 5\n      weekly: 9\n",
+        JAVA + "PayProps.java": PAY_PROPS}, set()),
+    ("ro'yxat (skalyar va mapping) bog'langan", {
+        RES: "app:\n  pay:\n    hosts:\n      - name: a\n        url: b\n      - name: c\n",
+        JAVA + "PayProps.java": PAY_PROPS}, set()),
+    ("record komponentlari", {
+        RES: "app:\n  mail:\n    from-address: a\n    retry-count: 1\n    extra: 2\n",
+        JAVA + "MailProps.java": (
+            'package shop;\n@ConfigurationProperties("app.mail")\n'
+            "public record MailProps(String fromAddress, int retryCount) {}\n")},
+     {"app.mail.extra"}),
+    ("sinf prefiksi value = bilan", {
+        RES: "app:\n  mail:\n    host: a\n    zzz: b\n",
+        JAVA + "MailProps.java": (
+            'package shop;\n@ConfigurationProperties(value = "app.mail")\n'
+            "class MailProps { String host; }\n")}, {"app.mail.zzz"}),
+    ("extends bor sinf: maydonlar noma'lum, hammasi bog'langan", {
+        RES: "app:\n  base:\n    anything: 1\n",
+        JAVA + "P.java": ('package shop;\n@ConfigurationProperties(prefix = "app.base")\n'
+                          "class P extends BaseProps { }\n")}, set()),
+    ("metod ustidagi @ConfigurationProperties: prefiks ostidagi hammasi", {
+        RES: "app:\n  ds:\n    anything: 1\n    other: 2\n  bad:\n    k: 1\n",
+        JAVA + "C.java": ('package shop;\nclass C {\n'
+                          '  @Bean @ConfigurationProperties(prefix = "app.ds")\n'
+                          "  DataSource ds() { return null; }\n}\n")}, {"app.bad.k"}),
+    ("@Value va default qiymat", {
+        RES: "app:\n  a: 1\n  b: 2\n  c: 3\n",
+        JAVA + "S.java": ('package shop;\nclass S {\n  @Value("${app.a:5}") int a;\n'
+                          '  @Value("#{${app.b}}") int b;\n}\n')}, {"app.c"}),
+    ("@Value ichidagi ichki placeholder", {
+        RES: "app:\n  a: 1\n  b: 2\n",
+        JAVA + "S.java": ('package shop;\nclass S {\n'
+                          '  @Value("${app.a:${app.b}}") int a;\n}\n')}, set()),
+    ("annotatsiya argumentidagi placeholder (@Scheduled)", {
+        RES: "app:\n  cron: x\n  dead: y\n",
+        JAVA + "S.java": ('package shop;\nclass S {\n'
+                          '  @Scheduled(cron = "${app.cron}") void run() {}\n}\n')},
+     {"app.dead"}),
+    ("Environment.getProperty / getRequiredProperty", {
+        RES: "app:\n  a: 1\n  b: 2\n  c: 3\n",
+        JAVA + "S.java": ('package shop;\nclass S {\n  String f(Environment env) {\n'
+                          '    return env.getProperty("app.a", "x") + env.getRequiredProperty("app.b");\n'
+                          "  }\n}\n")}, {"app.c"}),
+    ('getProperty("prefiks." + nom): prefiks ostidagi hammasi', {
+        RES: "app:\n  dyn:\n    x: 1\n    y: 2\n  other: 3\n",
+        JAVA + "S.java": ('package shop;\nclass S {\n  String f(Environment env, String n) {\n'
+                          '    return env.getProperty("app.dyn." + n);\n  }\n}\n')},
+     {"app.other"}),
+    ("@ConditionalOnProperty prefix va name", {
+        RES: "app:\n  feature:\n    enabled: true\n    other: 1\n",
+        JAVA + "F.java": ('package shop;\n@ConditionalOnProperty(prefix = "app.feature", '
+                          'name = "enabled")\nclass F {}\n')}, {"app.feature.other"}),
+    ("@ConditionalOnProperty value va yagona argument", {
+        RES: "app:\n  x: 1\n  y: 1\n  z: 1\n",
+        JAVA + "F.java": ('package shop;\n@ConditionalOnProperty(value = "app.x")\nclass F {}\n'
+                          '@ConditionalOnProperty("app.y")\nclass G {}\n')}, {"app.z"}),
+    ("@ConditionalOnProperty name massiv", {
+        RES: "app:\n  x: 1\n  y: 1\n  z: 1\n",
+        JAVA + "F.java": ('package shop;\n@ConditionalOnProperty(name = {"app.x", "app.y"})\n'
+                          "class F {}\n")}, {"app.z"}),
+    ("kodda konstanta sifatida yozilgan nuqtali nom", {
+        RES: "app:\n  flag: 1\n  dead: 2\n",
+        JAVA + "K.java": 'package shop;\nclass K { static final String FLAG = "app.flag"; }\n'},
+     {"app.dead"}),
+    ("prefiks satri o'zi kalitni bog'lamaydi", {
+        RES: "app:\n  pay:\n    unused-flag: true\n",
+        JAVA + "PayProps.java": PAY_PROPS}, {"app.pay.unused-flag"}),
+    ("yml ichidagi ${boshqa.kalit} havolasi", {
+        RES: "app:\n  base: 1\n  derived: ${app.base}\n  dead: 3\n",
+        JAVA + "S.java": 'package shop;\nclass S { @Value("${app.derived}") int d; }\n'},
+     {"app.dead"}),
+    ("kutubxona nom fazolari e'tiborsiz", {
+        RES: ("spring:\n  datasource:\n    url: x\nserver:\n  port: 1\nmanagement:\n  x: 1\n"
+              "logging:\n  level:\n    root: INFO\nspringdoc:\n  a: 1\nresilience4j:\n  b: 1\n"
+              "feign:\n  c: 1\neureka:\n  d: 1\ninfo:\n  e: 1\n"),
+        JAVA + "S.java": EMPTY_CLASS}, set()),
+    ("jwt nom fazosi kutubxona emas: bog'lanmagan bo'lsa topiladi", {
+        RES: "jwt:\n  secret: abc\n  ttl: 5\n", JAVA + "S.java": EMPTY_CLASS},
+     {"jwt.secret", "jwt.ttl"}),
+    ("${ENV} qiymatli kalit e'tiborsiz", {
+        RES: "app:\n  a: ${APP_A}\n  b: ${APP_B:5}\n  c: '${APP_C}'\n  d: plain\n",
+        JAVA + "S.java": EMPTY_CLASS}, {"app.d"}),
+    ("application.properties va profil fayli", {
+        "src/main/resources/application.properties": "app.a=1\napp.dead=2\n# izoh\n",
+        "src/main/resources/application-dev.yml": "app:\n  a: 1\n  devdead: 1\n",
+        JAVA + "S.java": VALUE_A}, {"app.dead", "app.devdead"}),
+    ("ko'p hujjatli yaml (---)", {
+        RES: "app:\n  a: 1\n---\napp:\n  b: 1\n", JAVA + "S.java": VALUE_A}, {"app.b"}),
+    ("blok skalyar ichidagi qatorlar kalit emas", {
+        RES: "app:\n  a: |\n    fake: line\n    other: line\n  b: 1\n",
+        JAVA + "S.java": ('package shop;\nclass S { @Value("${app.a}") String a;'
+                          ' @Value("${app.b}") int b; }\n')}, set()),
+    ("izohdagi kalit sanalmaydi", {
+        RES: "app:\n  a: 1 # izoh\n  # b: 2\n", JAVA + "S.java": VALUE_A}, set()),
+    ("test manbasidagi bog'lanish hisoblanmaydi", {
+        RES: "app:\n  a: 1\n", "src/test/java/shop/T.java": VALUE_A,
+        JAVA + "S.java": EMPTY_CLASS}, {"app.a"}),
+]
+
+
+def case_yml_kalitlar():
+    rows = []
+    for name, files, expect in CONFIG_CASES:
+        got = unbound(files)
+        rows.append(("%s (topildi: %s)" % (name, ", ".join(sorted(got)) or "-"),
+                     got == expect))
+    rows.append(("kutubxona nom fazolari ro'yxati aniq, jwt kirmaydi",
+                 {"spring", "server", "management", "logging", "springdoc",
+                  "resilience4j", "feign", "eureka", "info"}
+                 <= set(check_code.LIBRARY_NAMESPACES)
+                 and "jwt" not in check_code.LIBRARY_NAMESPACES))
+    return rows
+
+
+def case_yml_kalitlar_rejim():
+    def call(*args):
+        return testkit.call_main(check_code.main,
+                                 argv=["check_code.py"] + list(args), cwd=ROOT)
+
+    root, paths = _project(CONFIG_CASES[0][1])
+    clean_root, _ = _project({RES: "app:\n  a: 1\n", JAVA + "S.java": VALUE_A})
+    empty_root, _ = _project({JAVA + "S.java": EMPTY_CLASS})
+    try:
+        res = call("--yml-kalitlar", root)
+        res_clean = call("--yml-kalitlar", clean_root)
+        res_empty = call("--yml-kalitlar", empty_root)
+        res_none = call("--yml-kalitlar")
+        res_plain = call(root)
+        proc = subprocess.run([sys.executable, TOOL, "--yml-kalitlar", root],
+                              capture_output=True, text=True, cwd=ROOT)
+        raw_hook = run_hook(paths[JAVA + "PayProps.java"])
+    finally:
+        for r in (root, clean_root, empty_root):
+            shutil.rmtree(r, ignore_errors=True)
+    return [
+        ("bog'lanmagan kalit: rc 1, qator va yig'ma",
+         res.returncode == 1 and "application.yml:12  `app.pay.unused-flag`" in res.stdout
+         and "check_code: --yml-kalitlar: 6 kalit, 1 bog'lanmagan" in res.stdout),
+        ("topilma qo'llanma havolasi bilan", "doc.sh show clean-code 35.18" in res.stdout),
+        ("hammasi bog'langan: rc 0 va yig'ma qator",
+         res_clean.returncode == 0
+         and res_clean.stdout.strip() == "check_code: --yml-kalitlar: 1 kalit, 0 bog'lanmagan"),
+        ("sozlama fayli yo'q: rc 2",
+         res_empty.returncode == 2 and "topilmadi" in res_empty.stdout),
+        ("ildiz berilmagan: rc 2",
+         res_none.returncode == 2 and "ishlatilishi" in res_none.stdout),
+        ("alohida jarayonda ham rc 1",
+         proc.returncode == 1 and "1 bog'lanmagan" in proc.stdout),
+        ("oddiy rejim papkani tekshirmaydi (loyiha rejimi alohida)",
+         res_plain.returncode == 3 and "--yml-kalitlar" not in res_plain.stdout),
+        ("hook rejimiga kirmaydi (PayProps.java hookda toza)",
+         "yml-kalitlar" not in raw_hook and "bog'lanmagan" not in raw_hook),
+    ]
+
+
 SECTIONS = [
     ("Topilishi kerak", case_topilishi),
     ("Qo'llanmaga ulanish", case_qollanma),
@@ -1979,6 +2457,11 @@ SECTIONS = [
     ("to_regclass(..)::text va schema li nom", case_regclass_matn),
     ("Bitta natijali @Query va kalitsiz join", case_nokalit_join),
     ("Pul va holat setteri", case_muhim_setter),
+    ("Ortiqchalik: mapper ignore, Void kolleksiya, bo'sh Contexts", case_ortiqcha_java),
+    ("Liquibase changelog YAML: qoidalar", case_changelog_yaml),
+    ("Liquibase changelog YAML: yo'l va chiqish", case_changelog_yoli),
+    ("Bog'lanmagan konfiguratsiya kaliti", case_yml_kalitlar),
+    ("--yml-kalitlar rejimi", case_yml_kalitlar_rejim),
     ("Toza fayl", case_toza_fayl),
     ("Ko'p fayl", case_kop_fayl),
     ("Zanjir majburlanadi", case_zanjir),

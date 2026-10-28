@@ -4,11 +4,16 @@
     echo '<hook json>' | python3 tools/check_code.py
     python3 tools/check_code.py <fayl.java>     # qo'lda tekshirish
     find src -name '*.java' -print0 | xargs -0 python3 tools/check_code.py
+    python3 tools/check_code.py db/changelog/001-x.yaml   # Liquibase YAML
+    python3 tools/check_code.py --yml-kalitlar <modul ildizi>
 
 Bir nechta fayl bitta chaqiruvda: 800 faylda Python 800 marta emas, bir
 marta ishga tushadi. Faqat buzilishi bor fayllar chiqadi, oxirida yig'ma
 qator `check_code: N fayl, M buzilish`, shuning uchun grep kerak emas.
 Chiqish kodi: 0 toza, 1 buzilish bor, 3 .java bo'lmagan fayl tekshirilmadi.
+Yo'lida `changelog`, `changes` yoki `db/` bor va ichida `databaseChangeLog`
+bo'lgan `.yaml`/`.yml` Liquibase changelog sifatida tekshiriladi (bu faqat
+CLI: hook `.java` da qoladi).
 
 NOSONAR izohli satr va `@SuppressWarnings("java:Sxxxx")` bilan o'ralgan
 e'lon o'tkaziladi: Sonar ham ularni o'tkazadi. Hook rejimida Edit dan
@@ -38,6 +43,13 @@ S2184, S6809) ataylab yo'q: ular qo'llanmada qoida sifatida yoziladi
 fayldan va loyiha `src` papkasidan oladi; S5841 faqat kolleksiya ekaniga
 dalil bor o'zgaruvchida (e'lon qilingan tur, `var x = ...collect(..)`,
 bitta argumentli `extracting`).
+
+Ortiqchalik darvozasi (agent fayllaridagi "Ortiqchalik va pattern
+darvozasi", 4, 8, 11-qoidalar): javob DTO maydoni mapperda `ignore`,
+`List<Void>` kabi doim bo'sh tur, bo'sh `Contexts`, changelog YAML da
+qulf chegarasiz yoki kontekstsiz changeset va vaqt darvozasi. Alohida
+loyiha rejimi `--yml-kalitlar <modul ildizi>` hech qaysi sinfga bog'lanmagan
+konfiguratsiya kalitini topadi; u faqat chaqirilganda yuradi, hookda emas.
 
 Sonar 26.x serveridan 2026-10-10: S8700 (LocalDateTime lar orasida
 Duration/ChronoUnit between: tur e'londan, zanjirdan yoki loyiha `src`
@@ -308,9 +320,14 @@ def check_text(text, path):
                 "Awaitility yoki deterministik kutish ishlatilsin.",
                 "Flaky Test", "java:S2925"))
 
+    lit = strip_comments(text)
     out.extend(check_transactions(code))
     out.extend(check_tx_template_catch(code))
-    out.extend(check_nonunique_join(code, strip_comments(text)))
+    out.extend(check_nonunique_join(code, lit))
+    out.extend(check_void_collection(code))
+    if not is_test:
+        out.extend(check_mapstruct_ignore(code, lit))
+        out.extend(check_empty_contexts(lit))
     out.extend(check_sonar(text, code, is_test, path))
     return suppress(out, text, code)
 
@@ -3357,6 +3374,674 @@ def check_tx_template_catch(code):
     return out
 
 
+# ---------------------------------------------------------------------------
+# Ortiqchalik darvozasi ("Ortiqchalik va pattern darvozasi", agent
+# fayllarida) qoidalarining mexanik qismi: o'lik maydon, bo'sh Liquibase
+# konteksti, himoyasiz changeset, bog'lanmagan konfiguratsiya kaliti.
+# Hammasi regex va qavs sanash bilan; noaniq joyda jim qoladi.
+# ---------------------------------------------------------------------------
+
+MAPPER_RE = re.compile(r"@(?:org\s*\.\s*mapstruct\s*\.\s*)?Mapper\b")
+MAPPING_RE = re.compile(r"@(?:org\s*\.\s*mapstruct\s*\.\s*)?Mapping\s*(?=\()")
+IGNORE_TRUE_RE = re.compile(r"\bignore\s*=\s*true\b")
+IGNORE_BY_DEFAULT_RE = re.compile(r"\bignoreByDefault\s*=\s*true\b")
+TARGET_ARG_RE = re.compile(r'\btarget\s*=\s*"([^"]*)"')
+ANNOTATION_NAME_RE = re.compile(r"@(?!interface\b)[\w$.]+")
+OPEN_PAREN_RE = re.compile(r"\s*\(")
+SIGNATURE_RE = re.compile(
+    r"(?:(?:public|protected|abstract|default|static|final)\s+)*(?:<[^>]*>\s*)?"
+    r"([\w$.<>\[\],?& ]+?)\s+([A-Za-z_$][\w$]*)\s*\(")
+# Javob DTO si nomining oxiri. So'rov DTO si va entity bu ro'yxatga kirmaydi:
+# ularni qurishda `ignore` (id, version) odatiy va to'g'ri.
+RESPONSE_SUFFIXES = ("Dto", "DTO", "Response", "View")
+
+
+def _member_spans(code, brace, end):
+    """Tur tanasining a'zolari: [(boshi, oxiri)] pozitsiyalari.
+
+    A'zo tanasiz `;` bilan yoki `{...}` bloki bilan tugaydi. Annotatsiya
+    qavsidagi `{` (`@Mappings({...})`) a'zoni uzmaydi: qavs chuqurligi
+    sanaladi.
+    """
+    out, start, paren, curly = [], brace + 1, 0, 0
+    for i in range(brace + 1, end):
+        c = code[i]
+        if c == "(":
+            paren += 1
+        elif c == ")":
+            paren -= 1
+        elif c == "{":
+            curly += 1
+        elif c == "}":
+            curly -= 1
+            if curly == 0 and paren == 0:
+                out.append((start, i + 1))
+                start = i + 1
+        elif c == ";" and curly == 0 and paren == 0:
+            out.append((start, i + 1))
+            start = i + 1
+    return out
+
+
+def _without_annotations(seg):
+    """Annotatsiyalar (argumentlari bilan) olib tashlangan, qisqartirilgan matn."""
+    out, pos = [], 0
+    while True:
+        m = ANNOTATION_NAME_RE.search(seg, pos)
+        if not m:
+            out.append(seg[pos:])
+            break
+        out.append(seg[pos:m.start()])
+        pos = m.end()
+        after = OPEN_PAREN_RE.match(seg, pos)
+        if after:
+            close = _paren_end(seg, after.end() - 1)
+            pos = close + 1 if close != -1 else len(seg)
+    return " ".join("".join(out).split())
+
+
+def check_mapstruct_ignore(code, lit):
+    """Javob DTO maydoni mapperda `ignore = true`: doim null (clean-code 35.18).
+
+    Faqat yangi obyekt quradigan metod: `@MappingTarget` parametri bor
+    update metodida `ignore` maydonni himoya qiladi (mavjud qiymat qoladi),
+    `@BeanMapping(ignoreByDefault = true)` da esa hamma maydon ataylab
+    o'tkazilgan. `@AfterMapping`/`@BeforeMapping` bor mapperda maydon
+    shu yerda to'ldirilishi mumkin: o'tkaziladi.
+    """
+    if "Mapper" not in code:
+        return []
+    out = []
+    for mapper in MAPPER_RE.finditer(code):
+        head = TYPE_HEAD_RE.search(code, mapper.end())
+        brace = code.find("{", head.end()) if head else -1
+        end = _block_end(code, brace) if brace != -1 else -1
+        if end == -1 or re.search(r"@(?:After|Before)Mapping\b", code[brace:end]):
+            continue
+        for start, stop in _member_spans(code, brace, end):
+            seg = code[start:stop]
+            if "Mapping" not in seg or "@MappingTarget" in seg \
+                    or IGNORE_BY_DEFAULT_RE.search(seg):
+                continue
+            sig = SIGNATURE_RE.match(_without_annotations(seg))
+            kind = _simple_type(sig.group(1)) if sig else ""
+            if not kind.endswith(RESPONSE_SUFFIXES):
+                continue
+            for mapping in MAPPING_RE.finditer(seg):
+                spans, close = _split_args(seg, mapping.end())
+                if spans is None or not IGNORE_TRUE_RE.search(seg[mapping.end():close]):
+                    continue
+                target = TARGET_ARG_RE.search(lit[start + mapping.end():start + close])
+                out.append(_find(
+                    "", "o'rta", code, start + mapping.start(),
+                    "javob DTO maydoni `%s` mapperda ignore (`%s` qaytaradi): "
+                    "keyin to'ldirilmasa doim null; o'chiring yoki to'ldiring "
+                    "(`@JsonInclude(NON_NULL)` buni yashiradi, tuzatmaydi)."
+                    % (target.group(1) if target else "?", kind),
+                    "Dead Code", ref="clean-code 35.18"))
+    return out
+
+
+VOID_COLLECTION_RE = re.compile(
+    r"(?<![\w$.])(?:java\s*\.\s*util\s*\.\s*)?"
+    r"(?P<type>(?:List|Set|Collection|Optional)\s*<\s*Void\s*>"
+    r"|Map\s*<\s*(?:[^<>,;(){}]|<[^<>;(){}]*>)+?,\s*Void\s*>)"
+    r"\s+[A-Za-z_$][\w$]*\s*(?=[;=(,)])")
+
+
+def check_void_collection(code):
+    """`List<Void>`, `Optional<Void>`, `Map<K, Void>`: maydon, komponent yoki qaytish turi.
+
+    `Void` ning yagona qiymati `null`: bunday kolleksiya hech qachon
+    ma'lumot olib yurmaydi. `CompletableFuture<Void>` va `Mono<Void>`
+    tugash signali, ular bu yerga tushmaydi.
+    """
+    if "Void" not in code:
+        return []
+    return [_find(
+        "", "yuqori", code, m.start("type"),
+        "`%s` doim bo'sh tur: maydon hech qachon ma'lumot olib yurmaydi, "
+        "o'chiring." % re.sub(r"\s+", "", m.group("type")),
+        "Dead Code", ref="clean-code 35.18")
+        for m in VOID_COLLECTION_RE.finditer(code)]
+
+
+EMPTY_CONTEXTS_RE = re.compile(
+    r'(?<![\w$.])new\s+(?:[A-Za-z_$][\w$]*\s*\.\s*)*Contexts\s*\(\s*(?:""\s*)?\)')
+
+
+def check_empty_contexts(lit):
+    """`new Contexts()` va `new Contexts("")`: bo'sh kontekst hamma changesetni yurgizadi."""
+    if "Contexts" not in lit:
+        return []
+    return [_find(
+        "", "yuqori", lit, m.start(),
+        "bo'sh Liquibase konteksti hamma changesetni, alohida kontekstga "
+        "ajratilganlarini ham yurgizadi; kontekstni aniq bering "
+        "(`new Contexts(\"default\")`).",
+        "Liquibase", ref="architect 33.1")
+        for m in EMPTY_CONTEXTS_RE.finditer(lit)]
+
+
+# --- Liquibase changelog YAML -------------------------------------------------
+
+CHANGELOG_PATH_RE = re.compile(r"changelog|changes|db/", re.I)
+CHANGESET_RE = re.compile(r"^(\s*)-\s+changeSet\s*:\s*(?:#.*)?$")
+YAML_KEY_RE = re.compile(r"^(\s*)([A-Za-z_][\w-]*)\s*:(?:\s+(.*))?$")
+SQL_KEY_RE = re.compile(r"^(\s*(?:-\s+)?)sql\s*:\s*(.*)$")
+BLOCK_SCALAR_RE = re.compile(r"[|>][+-]?\d*\s*(?:#.*)?$")
+SQL_NOISE_RE = re.compile(r"--[^\n]*|/\*.*?\*/|'(?:''|[^'])*'", re.S)
+# Qulf oladigan yoki ko'p qatorga tegadigan buyruq. UPDATE va DELETE faqat
+# statement boshida: `FOR UPDATE`, `DO UPDATE SET`, `ON DELETE CASCADE` emas.
+LOCKING_SQL_RE = re.compile(
+    r"\bALTER\s+TABLE\b|\bDROP\s+(?!INDEX\s+CONCURRENTLY\b)\w+"
+    r"|\bCREATE\s+(?:UNIQUE\s+)?INDEX\b(?!\s+CONCURRENTLY\b)"
+    r"|(?:^|;|\$\$|\bBEGIN\b|\bTHEN\b|\bELSE\b)\s*"
+    r"(?:UPDATE\s+(?!SET\b)[\w\"]|DELETE\s+FROM\b)", re.I | re.M)
+LONG_SQL_RE = re.compile(
+    r"\b(?:CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY|DROP\s+INDEX\s+CONCURRENTLY"
+    r"|VACUUM\s+FULL|VALIDATE\s+CONSTRAINT|ATTACH\s+PARTITION)\b", re.I)
+TIME_GATE_RE = re.compile(
+    r"interval\s*'\s*\d+\s*(?:day|hour|minute|week|month)s?\s*'"
+    r"|'\s*\d+\s*(?:day|hour|minute|week|month)s?\s*'\s*::\s*interval", re.I)
+CHANGELOG_TABLE_RE = re.compile(r"\bdatabasechangelog\b(?!lock)", re.I)
+# changeSet ning SQL emas bo'limlari: izoh, shartlar va rollback ichidagi
+# matn changeset ni yurgizuvchi SQL emas.
+NON_CHANGE_KEYS = ("comment", "preConditions", "rollback", "validCheckSum")
+
+
+def _indent(line):
+    return len(line) - len(line.lstrip(" "))
+
+
+def _blank_line(line):
+    body = line.strip()
+    return not body or body.startswith("#")
+
+
+def read_changelog(path):
+    """Liquibase YAML changelog matni; boshqa fayl, yo'q yoki o'qilmasa None."""
+    norm = path.replace("\\", "/")
+    if (not norm.endswith((".yaml", ".yml")) or not CHANGELOG_PATH_RE.search(norm)
+            or not os.path.isfile(path)):
+        return None
+    try:
+        with open(path, encoding="utf-8-sig", errors="replace") as handle:
+            text = handle.read()
+    except OSError:
+        return None
+    return text if "databaseChangeLog" in text else None
+
+
+def _subtree_end(lines, k, indent):
+    """`k` qatordagi kalitning ostki daraxti tugagan qator indeksi (o'zi kirmaydi)."""
+    j = k + 1
+    while j < len(lines):
+        line = lines[j]
+        if not _blank_line(line):
+            ind = _indent(line)
+            if ind < indent or (ind == indent and not line.strip().startswith("-")):
+                break
+        j += 1
+    return j
+
+
+def _changeset_blocks(lines):
+    """[(birinchi qator indeksi, oxirgi+1)]: har `- changeSet:` ning tanasi."""
+    out = []
+    for i, line in enumerate(lines):
+        m = CHANGESET_RE.match(line)
+        if not m:
+            continue
+        dash = len(m.group(1))
+        j = i + 1
+        while j < len(lines) and (_blank_line(lines[j]) or _indent(lines[j]) > dash):
+            j += 1
+        out.append((i + 1, j))
+    return out
+
+
+def _sql_values(lines, first, skip):
+    """[(qator raqami, matn)]: `sql:` kalitlari qiymati (`skip` qatorlari tashqari)."""
+    out = []
+    for k, line in enumerate(lines):
+        m = None if k in skip else SQL_KEY_RE.match(line)
+        if not m:
+            continue
+        value = m.group(2).strip()
+        if not value or value.startswith("#"):
+            continue   # `- sql:` ostida ichki `sql:` mapping: u o'zi sanaladi
+        col = len(m.group(1))
+        if not BLOCK_SCALAR_RE.match(value):
+            out.append((first + k, value))
+        for j in range(k + 1, len(lines)):
+            if j in skip:
+                break
+            if not lines[j].strip():
+                out.append((first + j, ""))
+            elif _indent(lines[j]) > col:
+                out.append((first + j, lines[j]))
+            else:
+                break
+    return out
+
+
+def _line_at(offsets, pos):
+    """`offsets[i]` - i-chi qatorning birinchi pozitsiyasi: `pos` turgan qator indeksi."""
+    lo, hi = 0, len(offsets) - 1
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if offsets[mid] <= pos:
+            lo = mid
+        else:
+            hi = mid - 1
+    return lo
+
+
+def _blank_match(match):
+    return "".join("\n" if c == "\n" else " " for c in match.group(0))
+
+
+def _changeset_meta(body):
+    """changeSet kalitlari: (meta, SQL emas qatorlar indeksi, preConditions qatorlari)."""
+    keyed = [k for k, line in enumerate(body) if not _blank_line(line)]
+    key_indent = _indent(body[keyed[0]])
+    meta, skip, pre = {}, set(), []
+    k = 0
+    while k < len(body):
+        m = None
+        if not _blank_line(body[k]) and _indent(body[k]) == key_indent:
+            m = YAML_KEY_RE.match(body[k])
+        if not m:
+            k += 1
+            continue
+        name = m.group(2)
+        if name in NON_CHANGE_KEYS:
+            end = _subtree_end(body, k, key_indent)
+            skip.update(range(k, end))
+            if name == "preConditions":
+                pre = [(j, body[j]) for j in range(k, end) if not _blank_line(body[j])]
+            k = end
+            continue
+        meta[name] = (m.group(3) or "").split(" #")[0].strip().strip("'\"")
+        k += 1
+    return meta, skip, pre
+
+
+def _check_changeset(lines, start, stop):
+    """Bitta changeSet (lines[start:stop]): o'rta va past topilmalar."""
+    body = lines[start:stop]
+    if all(_blank_line(line) for line in body):
+        return []
+    base = start + 1   # body[0] ning qator raqami
+    meta, skip, pre = _changeset_meta(body)
+    ident = meta.get("id", "?")
+    out = []
+
+    values = _sql_values(body, base, skip)
+    if values:
+        joined = "\n".join(text for _, text in values)
+        offsets, pos = [], 0
+        for _, text in values:
+            offsets.append(pos)
+            pos += len(text) + 1
+        sql = SQL_NOISE_RE.sub(_blank_match, joined)
+        has_context = any(meta.get(k) for k in ("context", "contextFilter", "contexts"))
+        locking = LOCKING_SQL_RE.search(sql)
+        if (locking and "lock_timeout" not in sql.lower()
+                and meta.get("runInTransaction", "").lower() != "false"):
+            out.append(Finding(
+                "o'rta", values[_line_at(offsets, locking.end() - 1)][0],
+                "changeSet `%s`: qulf kutishi chegarasiz: `SET LOCAL "
+                "lock_timeout` qo'ying (ulanish pooleri statement timeout "
+                "qo'ysa undan qisqa)." % ident,
+                "Liquibase", ref="architect 33.5"))
+        long_op = LONG_SQL_RE.search(sql)
+        if long_op and not has_context:
+            out.append(Finding(
+                "o'rta", values[_line_at(offsets, long_op.start())][0],
+                "changeSet `%s`: uzoq operatsiya (`%s`): pooler statement "
+                "timeout ida kesilishi mumkin; alohida kontekstga ajrating "
+                "(`context:`) va to'g'ridan ulanishda yurgizing."
+                % (ident, " ".join(long_op.group(0).upper().split())),
+                "Liquibase", ref="architect 33.8"))
+
+    text = "\n".join(line for _, line in pre)
+    gate = TIME_GATE_RE.search(text)
+    if gate and CHANGELOG_TABLE_RE.search(text):
+        out.append(Finding(
+            "past", base + pre[text.count("\n", 0, gate.start())][0],
+            "changeSet `%s`: vaqt darvozasi: dateexecuted JVM soati, now() "
+            "sessiya zonasi; belgi changeset ning boshqa deployda yozilganini "
+            "`deployment_id` bilan tekshirish ishonchliroq." % ident,
+            "Liquibase", ref="architect 33.3"))
+    return out
+
+
+def check_changelog(text, path=""):
+    """Liquibase YAML changelog: changeSet bloklari `- changeSet:` bo'yicha matn bilan ajraladi."""
+    lines = [line.rstrip("\r") for line in text.split("\n")]
+    out = []
+    for start, stop in _changeset_blocks(lines):
+        out.extend(_check_changeset(lines, start, stop))
+    return sorted(out, key=lambda f: f.line)
+
+
+# --- Bog'lanmagan konfiguratsiya kaliti (--yml-kalitlar) -----------------------
+
+# Spring Boot va kutubxona nom fazolari: ularning kalitini Spring yoki
+# kutubxonaning o'zi o'qiydi, shu modulning sinfi emas. Faqat aniq ro'yxat:
+# `jwt`, `app` kabi loyiha nomlari bu yerga kirmaydi. Yangi kutubxona kerak
+# bo'lsa shu ro'yxatga izoh bilan qo'shiladi.
+LIBRARY_NAMESPACES = (
+    "spring", "server", "management", "logging", "springdoc", "resilience4j",
+    "feign", "eureka", "info",
+    "debug", "trace",   # Spring Boot ildiz bayroqlari
+)
+ENV_VALUE_RE = re.compile(r"^\$\{[A-Z][A-Z0-9_]*(?::[^}]*)?\}$")
+PLACEHOLDER_RE = re.compile(r"\$\{\s*([A-Za-z][A-Za-z0-9_.\-\[\]]*)")
+DOTTED_LITERAL_RE = re.compile(r'"([A-Za-z][\w-]*(?:\.[\w-]+)+)"')
+CONFIG_PROPS_RE = re.compile(r"@(?:org\s*\.\s*springframework\s*\.\s*boot\s*\.\s*context"
+                             r"\s*\.\s*properties\s*\.\s*)?ConfigurationProperties\b")
+ENV_CALL_RE = re.compile(
+    r'\.\s*(?:getProperty|getRequiredProperty|containsProperty)\s*\(\s*"([^"]+)"\s*(\+)?')
+BIND_CALL_RE = re.compile(r'\.\s*bind\s*\(\s*"([^"]+)"')
+CONDITIONAL_RE = re.compile(r"@ConditionalOnProperty\b")
+ARG_NAME_RE = re.compile(r"(?:(\w+)\s*=\s*)?(.*)\Z", re.S)
+PROPS_ARG_RE = re.compile(r'(?:(?:prefix|value)\s*=\s*)?"([^"]*)"\Z')
+CONFIG_FIELD_RE = re.compile(
+    r"(?<![\w$.@])(?:final\s+)?([A-Za-z_$][\w$.]*(?:\s*<[^;=(){}]*>)?(?:\s*\[\])*)"
+    r"\s+([a-z_$][\w$]*)\s*(?=[=;])")
+# Record komponenti: primitiv tur (`int retryCount`) ham, COMPONENT_RE dan farqli.
+CONFIG_COMPONENT_RE = re.compile(
+    r"([A-Za-z_$][\w$.]*(?:\s*<.*>)?(?:\s*\[\])*)\s+([a-z_$][\w$]*)\s*\Z", re.S)
+YAML_KEY_LINE_RE = re.compile(r"""("[^"]*"|'[^']*'|[^\s:#'"][^:#]*?)\s*:(?:\s+(.*))?$""")
+LEAF_PROPS_RE = re.compile(r"^\s*([^\s#!=:][^\s=:]*)\s*[=:]\s*(.*?)\s*$")
+CONFIG_FILE_RE = re.compile(r"application[\w.-]*\.(?:ya?ml|properties)\Z")
+
+
+def _norm(segment):
+    """Spring relaxed binding: `max-retries`, `maxRetries`, `max_retries` bir xil."""
+    return re.sub(r"\[.*\]", "", segment).replace("-", "").replace("_", "").lower()
+
+
+def _norm_key(key):
+    return ".".join(_norm(s) for s in key.split("."))
+
+
+def _yaml_leaves(text):
+    """application.yml ning barg kalitlari: [(to'liq kalit, qator, qiymat)].
+
+    PyYAML ga tayanmaydi. Ro'yxat (`- ...`) va blok skalyar (`|`, `>`)
+    ostidagi satrlar o'tkaziladi, ro'yxat egasi barg hisoblanadi.
+    """
+    recs, stack, skip = [], [], None
+    for n, raw in enumerate(text.split("\n"), 1):
+        line = raw.rstrip("\r")
+        body = line.strip()
+        ind = _indent(line)
+        if skip is not None:
+            if (not body or body.startswith("#") or ind > skip
+                    or (ind == skip and body.startswith("-"))):
+                continue
+            skip = None
+        if not body or body.startswith("#"):
+            continue
+        if body.startswith("---"):
+            stack.clear()
+            continue
+        if body.startswith("-"):
+            while stack and stack[-1][0] > ind:
+                stack.pop()
+            if stack:
+                skip = stack[-1][0]
+            continue
+        m = YAML_KEY_LINE_RE.match(body)
+        if not m:
+            continue
+        while stack and stack[-1][0] >= ind:
+            stack.pop()
+        value = (m.group(2) or "").strip()
+        if value and value[0] not in "'\"":
+            value = value.split(" #")[0].strip()
+        rec = [(stack[-1][1] + "." if stack else "") + m.group(1).strip("'\""),
+               n, value, False]
+        if stack:
+            stack[-1][2][3] = True
+        stack.append((ind, rec[0], rec))
+        recs.append(rec)
+        if BLOCK_SCALAR_RE.match(value):
+            skip = ind
+    return [(r[0], r[1], r[2]) for r in recs if not r[3]]
+
+
+def _properties_leaves(text):
+    out = []
+    for n, raw in enumerate(text.split("\n"), 1):
+        m = LEAF_PROPS_RE.match(raw)
+        if m:
+            out.append((m.group(1), n, m.group(2)))
+    return out
+
+
+def _config_files(root):
+    res = os.path.join(root, "src", "main", "resources")
+    if not os.path.isdir(res):
+        return []
+    return sorted(os.path.join(res, name) for name in os.listdir(res)
+                  if CONFIG_FILE_RE.match(name))
+
+
+def _java_files(root):
+    out = []
+    for base, _, names in os.walk(os.path.join(root, "src", "main", "java")):
+        out.extend(os.path.join(base, n) for n in names if n.endswith(".java"))
+    return sorted(out)
+
+
+def _type_fields(code):
+    """{tur: [maydonlar {norm: tur}, ochiq]}: shu fayldagi class/record maydonlari.
+
+    Ochiq: `extends` bor yoki enum/interface, ya'ni maydonlar to'liq noma'lum.
+    Statik maydon sanalmaydi.
+    """
+    out = {}
+    depths = None
+    for m in TYPE_HEAD_RE.finditer(code):
+        brace = code.find("{", m.end())
+        if brace == -1:
+            continue
+        head = code[m.start():brace]
+        kind = re.match(r"\w+", head).group(0)
+        fields = {}
+        is_open = kind in ("interface", "enum") or " extends " in head + " "
+        if kind == "record" and "(" in head:
+            spans, _ = _split_args(code, m.end() + head[m.end() - m.start():].index("("))
+            for s, e in spans or []:
+                comp = CONFIG_COMPONENT_RE.search(ANNOTATION_TEXT_RE.sub(" ", code[s:e]))
+                if comp:
+                    fields[_norm(comp.group(2))] = _simple_type(comp.group(1))
+        end = _block_end(code, brace)
+        if end != -1:
+            if depths is None:
+                depths = _brace_depths(code)
+            body_depth = depths[brace] + 1
+            for f in CONFIG_FIELD_RE.finditer(code, brace + 1, end):
+                if depths[f.start()] != body_depth:
+                    continue
+                own = code[max(code.rfind(c, 0, f.start()) for c in ";{}") + 1:f.start()]
+                if "static" not in own.split():
+                    fields[_norm(f.group(2))] = _simple_type(f.group(1))
+        slot = out.setdefault(m.group(1), [{}, False])
+        slot[0].update(fields)
+        slot[1] = slot[1] or is_open
+    return out
+
+
+def _binds_to(code, pos):
+    """`@ConfigurationProperties` dan keyingi e'lon: sinf nomi, metod bo'lsa None."""
+    while True:
+        m = re.compile(r"\s*@[\w$.]+").match(code, pos)
+        if not m:
+            break
+        pos = m.end()
+        after = OPEN_PAREN_RE.match(code, pos)
+        if after:
+            close = _paren_end(code, after.end() - 1)
+            pos = close + 1 if close != -1 else len(code)
+    decl = re.compile(r"\s*(?:(?:public|protected|private|static|final|abstract)\s+)*"
+                      r"(?:class|record)\s+([A-Z][\w$]*)").match(code, pos)
+    return decl.group(1) if decl else None
+
+
+def _conditional_keys(code, lit):
+    """`@ConditionalOnProperty` nomlari (prefix bilan): ishlatilgan kalitlar."""
+    out = set()
+    for m in CONDITIONAL_RE.finditer(code):
+        after = OPEN_PAREN_RE.match(code, m.end())
+        if not after:
+            continue
+        args, _ = _arg_texts(code, lit, after.end() - 1)
+        prefix, names = "", []
+        for arg in args or []:
+            key = ARG_NAME_RE.match(arg.strip())
+            strings = re.findall(r'"([^"]*)"', key.group(2))
+            if key.group(1) == "prefix" and strings:
+                prefix = strings[0].rstrip(".")
+            elif key.group(1) in (None, "name", "value"):
+                names.extend(strings)
+        out.update(_norm_key(prefix + "." + n if prefix else n) for n in names)
+    return out
+
+
+def scan_config_usage(root):
+    """src/main/java: bog'lovchilar, ishlatilgan kalitlar, prefikslar, literallar, turlar.
+
+    Bog'lovchi: (prefiks segmentlari, tur nomi yoki None). None - metod
+    ustidagi `@ConfigurationProperties`: tur boshqa jarda, prefiks ostidagi
+    hamma kalit bog'langan hisoblanadi. `used` - kalit va uning ostidagilari
+    (`@Value`, `Environment`, `@ConditionalOnProperty`, `bind`); `literals`
+    - kodda satr sifatida uchragan nuqtali nom, faqat o'ziga mos kalit.
+    """
+    binders, used, prefixes, literals, types = [], set(), [], set(), {}
+    for path in _java_files(root):
+        try:
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
+        except OSError:
+            continue
+        code, lit = strip_noise(text), strip_comments(text)
+        for name, (fields, is_open) in _type_fields(code).items():
+            slot = types.setdefault(name, [{}, False])
+            slot[0].update(fields)
+            slot[1] = slot[1] or is_open
+        props_spans = []
+        for m in CONFIG_PROPS_RE.finditer(code):
+            after = OPEN_PAREN_RE.match(code, m.end())
+            prefix, end = "", m.end()
+            if after:
+                args, close = _arg_texts(code, lit, after.end() - 1)
+                for arg in args or []:
+                    literal = PROPS_ARG_RE.match(arg.strip())
+                    prefix = literal.group(1) if literal else prefix
+                end = close + 1 if close != -1 else end
+                props_spans.append((m.start(), end))
+            binders.append(([_norm(s) for s in prefix.split(".") if s],
+                            _binds_to(code, end)))
+        used |= _conditional_keys(code, lit)
+        for m in ENV_CALL_RE.finditer(lit):
+            if m.group(2):
+                prefixes.append(_norm_key(m.group(1)))
+            else:
+                used.add(_norm_key(m.group(1)))
+        used.update(_norm_key(m.group(1)) for m in BIND_CALL_RE.finditer(lit))
+        used.update(_norm_key(m.group(1)) for m in PLACEHOLDER_RE.finditer(lit))
+        literals.update(
+            _norm_key(m.group(1)) for m in DOTTED_LITERAL_RE.finditer(lit)
+            if not any(s <= m.start() < e for s, e in props_spans))
+    return binders, used, prefixes, literals, types
+
+
+def _bound(types, kind, segments, depth=0):
+    """Tur maydonlari bo'ylab: `segments` kaliti shu turga bog'lanadimi."""
+    if not segments:
+        return True
+    info = types.get(kind)
+    if info is None or info[1] or depth > 8:
+        return True   # noma'lum tur (List, String, boshqa jar): ichi ko'rinmaydi
+    nxt = info[0].get(segments[0])
+    return nxt is not None and _bound(types, nxt, segments[1:], depth + 1)
+
+
+def key_is_bound(key, usage):
+    """`key` (nuqtali to'liq yo'l) shu modulda biror sinfga bog'langanmi."""
+    binders, used, prefixes, literals, types = usage
+    segments = [_norm(s) for s in key.split(".")]
+    normal = ".".join(segments)
+    if segments[0] in LIBRARY_NAMESPACES:
+        return True
+    if normal in literals or normal in used:
+        return True
+    if any(normal.startswith(u + ".") for u in used):
+        return True
+    if any(normal.startswith(p) for p in prefixes):
+        return True
+    return any(
+        segments[:len(prefix)] == prefix
+        and (kind is None or _bound(types, kind, segments[len(prefix):]))
+        for prefix, kind in binders)
+
+
+def check_config_keys(root):
+    """Modulning application*.yml|yaml|properties kalitlari: ({fayl: [Finding]}, kalitlar soni)."""
+    usage = scan_config_usage(root)
+    used = usage[1]
+    leaves = {}
+    for path in _config_files(root):
+        try:
+            with open(path, encoding="utf-8-sig", errors="replace") as handle:
+                text = handle.read()
+        except OSError:
+            continue
+        leaves[path] = (_properties_leaves(text) if path.endswith(".properties")
+                        else _yaml_leaves(text))
+        # Qiymatdagi `${boshqa.kalit}` havolasi ham ishlatish. ENV nomlari
+        # (`${DB_URL}`) hech qaysi kalitga mos kelmaydi, shuning uchun
+        # ta'sir qilmaydi.
+        used.update(_norm_key(m.group(1)) for m in PLACEHOLDER_RE.finditer(text))
+    found, total = {}, 0
+    for path, rows in leaves.items():
+        for key, line, value in rows:
+            total += 1
+            if ENV_VALUE_RE.match(value.strip("'\"")) or key_is_bound(key, usage):
+                continue
+            found.setdefault(path, []).append(Finding(
+                "o'rta", line,
+                "`%s` kalit hech qaysi sinfga bog'lanmagan (`@ConfigurationProperties`, "
+                "`@Value`, `Environment`, `@ConditionalOnProperty`): o'lik "
+                "konfiguratsiya; o'chiring yoki o'qiydigan kod yozing." % key,
+                "Dead Configuration", ref="clean-code 35.18"))
+    return found, total
+
+
+def check_config_keys_cli(args):
+    """`--yml-kalitlar <modul ildizi>`: loyiha rejimi; hook va har-fayl rejimiga kirmaydi."""
+    if len(args) != 1 or not os.path.isdir(args[0]):
+        print("ishlatilishi: check_code.py --yml-kalitlar <modul ildizi>")
+        return 2
+    if not _config_files(args[0]):
+        print("%s: src/main/resources/application*.yml|yaml|properties topilmadi"
+              % args[0])
+        return 2
+    found, total = check_config_keys(args[0])
+    count = 0
+    for path, findings in found.items():
+        count += len(findings)
+        print(render(path, findings))
+    print("check_code: --yml-kalitlar: %d kalit, %d bog'lanmagan" % (total, count))
+    return 1 if count else 0
+
+
 def render(path, findings):
     from docref import hint
     lines = ["%s: %d ta qoida buzilishi" % (path, len(findings))]
@@ -3383,7 +4068,15 @@ def read_java(path):
 
 def analyse(path):
     text = read_java(path)
-    return [] if text is None else check_text(text, path)
+    if text is not None:
+        return check_text(text, path)
+    text = read_changelog(path)
+    return [] if text is None else check_changelog(text, path)
+
+
+def checkable(path):
+    """.java yoki Liquibase YAML changelog (yo'lida changelog/changes/db/ va `databaseChangeLog`)."""
+    return path.endswith(".java") or read_changelog(path) is not None
 
 
 def _source_line(text, line):
@@ -3493,7 +4186,7 @@ def check_paths(paths):
     tekshirilmagan. Shuning uchun alohida qator va rc 3 (buzilish bo'lsa
     baribir 1). Hook rejimi bunday yozuvda jim qoladi.
     """
-    skipped = [p for p in paths if not p.endswith(".java")]
+    skipped = [p for p in paths if not checkable(p)]
     for path in skipped:
         print("%s: tekshirilmadi (faqat .java)" % path)
     if len(paths) == 1 and skipped:
@@ -3507,7 +4200,7 @@ def check_paths(paths):
         return 1
     files = total = 0
     for path in paths:
-        if not path.endswith(".java") or not os.path.isfile(path):
+        if path in skipped or not os.path.isfile(path):
             continue
         files += 1
         findings = analyse(path)
@@ -3519,6 +4212,8 @@ def check_paths(paths):
 
 
 def main():
+    if sys.argv[1:2] == ["--yml-kalitlar"]:
+        return check_config_keys_cli(sys.argv[2:])
     if len(sys.argv) > 1:
         return check_paths(sys.argv[1:])
 

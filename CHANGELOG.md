@@ -3,6 +3,24 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.5.4 (2026-10-28)
+
+- `check_code` "Ortiqchalik va pattern darvozasi" qoidalarini mexanik
+  ushlaydi: mapperda `ignore` qilingan javob DTO maydoni (o'rta;
+  `@MappingTarget` li update va `ignoreByDefault` tegilmaydi),
+  `List<Void>`/`Optional<Void>`/`Map<K, Void>` doim bo'sh tur (yuqori),
+  `new Contexts()` va `new Contexts("")` (yuqori, test faylida emas).
+- Liquibase changelog YAML (yo'lida `changelog`, `changes` yoki `db/` va
+  ichida `databaseChangeLog`) CLI da tekshiriladi: `lock_timeout` siz
+  `ALTER`/`DROP`/`CREATE INDEX`/`UPDATE`/`DELETE`, kontekstsiz
+  `CONCURRENTLY`/`VACUUM FULL`/`VALIDATE CONSTRAINT`/`ATTACH PARTITION`
+  (o'rta) va `databasechangelog` ga `interval` bilan vaqt darvozasi (past).
+- `check_code.py --yml-kalitlar <modul ildizi>`: `application*.yml|yaml|
+  properties` kaliti `@ConfigurationProperties`, `@Value`, `Environment`,
+  `@ConditionalOnProperty` yoki koddagi nuqtali nomga bog'lanmagan bo'lsa
+  topiladi. Spring/kutubxona nom fazolari (`LIBRARY_NAMESPACES`) va
+  `${ENV}` qiymatli kalitlar o'tkaziladi; hook rejimiga kirmaydi.
+
 ## 0.5.3 (2026-10-21)
 
 - `guruh.py birlashtir` fayl yo'qotmaydi: asos `dev` tarixida va daraxt

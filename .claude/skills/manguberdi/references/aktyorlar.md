@@ -275,7 +275,9 @@ Qisqa ro'yxat; har asbobning to'liq qoidasi tegishli bo'limda.
   punktlari va avvalgi xatolar tegishli. Java yozishdan oldin majburiy.
 - `tools/check_code.py` - Java fayl yozilgandan keyin `PostToolUse` hooki:
   mexanik qoidalar va `rules_for` chaqirilganmi. Faqat yolg'on ishga
-  tushishi nol bo'lgan tekshiruvlar.
+  tushishi nol bo'lgan tekshiruvlar. Liquibase changelog YAML fayli
+  argument sifatida beriladi; `--yml-kalitlar <modul ildizi>` hech qaysi
+  sinfga bog'lanmagan konfiguratsiya kalitini topadi (hookda emas).
 - `tools/budget.py`, `tools/handoff.py`, `tools/usage.py` - aktyor
   budjeti (`Chaqiruv budjeti`), kontekst uzatish va token sarfi
   (`references/kontekst.md`).
