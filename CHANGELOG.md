@@ -3,6 +3,16 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.5.6 (2026-10-28)
+
+- Umumiy memory: servisda `EntityManager.flush()` istisnosi tarjima
+  qilinmaydi (409 o'rniga 500); fakt manbasi ko'chganda backfill va DROP
+  ma'lumot darvozasi; holat guardi maqsad holatning yagona yozuvchisini
+  yopmasin; reja kartasini umumiy qoida va `feedback` memory bilan
+  solishtirish.
+- Commitsiz guruh birlashtirish: toza daraxtda `birlashtir` qoldiqni o'zi
+  commit qiladi, "commit yo'q" rejimida qo'lda yo'l.
+
 ## 0.5.5 (2026-10-28)
 
 - Parallel guruh kartasiga `scratch:` qatori majburiy (`parallel.md`).

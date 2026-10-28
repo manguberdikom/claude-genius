@@ -35,3 +35,7 @@ Barcha proyektlarga. Bir yozuv bir qator, nom mavzuni aytadi.
 - `feedback_worktree-stash-umumiy.md` - stash worktree lar orasida umumiy
 - `feedback_guruh-commitsiz-birlashtirish.md` - commitsiz daraxtga patch va merge-file
 - `feedback_liquibase-runalways-pending.md` - runAlways har yurishda pending
+- `feedback_entitymanager-flush-tarjima.md` - servisda flush 409 o'rniga 500
+- `feedback_manba-kochganda-backfill.md` - hosila ustun: backfill va DROP darvozasi
+- `feedback_otish-guardi-yagona-yozuvchi.md` - guard maqsad holatning yagona yozuvchisini yopadi
+- `feedback_karta-umumiy-qoidaga-zid.md` - karta umumiy qoida va feedback ga zid
