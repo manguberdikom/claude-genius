@@ -64,7 +64,12 @@ cheklov: <normallashtirilgan Cheklov> | yo'q
 qabul mezoni: <...>
 qarorlar: <tanlangan standartlar, qoida raqami bilan>
 test: python3 tools/run_tests.py --ildiz <papka> --asos <asos> --yurgiz
+scratch: <sessiya scratch papkasi>/<guruh-id>/
 ```
+
+`scratch:` majburiy: har guruh vaqtinchalik skript va faylini faqat o'z
+papkasiga yozadi. Umumiy scratch berilgan parallel agentlar bir-birining
+skriptini bosdi va repo ildiziga fayl tashladi.
 
 `test:` guruh boshidan yig'ilgan butun diffni oladi: u guruh oxirida
 bir marta. Qadam ichida `--ildiz <papka> --qadam <test> --yurgiz`.

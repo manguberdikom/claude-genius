@@ -238,7 +238,10 @@ Reja va har karta shu 13 qoidaga qarab tuziladi: buzadigan yechim
 rejaga kirmaydi. Har kartada `Darvoza:` qatori (qaysi qoidalar tegishli,
 qanday qondiriladi) va alohida `Pattern:` qatori (bo'lim raqami yoki
 "pattern kerak emas: sabab"). Foydalanuvchi qarori `cheklov:` ga AYNAN
-ko'chiriladi; o'z talqiningiz alohida belgilanadi.
+ko'chiriladi; o'z talqiningiz alohida belgilanadi. Qo'llanma bo'limiga
+havola qo'yishdan oldin uning mazmuni `doc.sh show` bilan tekshiriladi:
+nomi mos ko'ringan bo'lim boshqa mavzuda bo'lishi mumkin (masalan test
+qiymati patterni hisoblanadigan ustun uchun havola bo'lib ketgan).
 
 1. **Holat bir joyda.** Yangi status, bosqich yoki step qo'shishdan oldin
    shu obyektda status bormi, tekshiriladi. Bor bo'lsa mavjud enum

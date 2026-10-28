@@ -223,8 +223,10 @@ tugagan hisoblanmaydi.
 
 ## Qoidalar
 
-- Review hisoboti proyekt repoga yozilmaydi: u javobda qaytadi, fayl
-  kerak bo'lsa hujjatlar papkasiga (`python3 tools/handoff.py --docs`).
+- Review hisoboti proyekt repoga yozilmaydi: u to'liq matni bilan javobda
+  qaytadi. Bu agentda Write yo'q: hisobotni Bash heredoc yoki Python bilan
+  faylga yozishga urinilmaydi, fayl kerak bo'lsa uni asosiy sessiya hujjatlar
+  papkasiga (`python3 tools/handoff.py --docs`) yozadi.
   Shu diffda qo'shilgan (`??`, `A`) va vazifada so'ralmagan hujjat yoki
   asbob fayli (`*.md`, `.claude/`, `.idea/`, `*.http`, `adr/`, `docs/`)
   `o'rta` topilma. Proyektda avvaldan bor fayl topilma emas.

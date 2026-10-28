@@ -45,3 +45,14 @@ jamoa amaliyoti), u topilma emas: `Taklif:` ga bir qator.
 6. **Qoplanish**: test turi mos keladimi, nima qoplanmagan (Sonar bo'lsa
    `sonar_fetch.py coverage`). `tools/doc.sh show testing 2.5`,
    `tools/doc.sh checklist testing 2`.
+
+## Dalil chuqurligi
+
+"O'lik" yoki "ortiqcha" degan topilma kod yoki iste'molchi bilan isbotlanadi:
+
+- dev bazada ustunning `null_frac = 1` bo'lishi yozuvchi yo'qligiga dalil emas:
+  yozuvchi kodda `grep` bilan qidiriladi (dev ma'lumoti yarim to'la bo'ladi);
+- `idx_scan = 0` kichik jadvalda dalil emas: planner kichik jadvalni ketma-ket
+  o'qiydi, indeksning so'rovi kodda (WHERE, JOIN, ORDER BY) qidiriladi;
+- "o'lik endpoint" frontend yoki consumer kodidagi chaqiruv bilan tasdiqlanadi,
+  hujjat yetmaydi: hujjatga tayangan auditda tirik endpointlar o'lik deb chiqdi.

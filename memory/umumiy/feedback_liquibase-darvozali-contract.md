@@ -1,10 +1,13 @@
 ---
 type: feedback
+modified: 2026-10-28T00:00:00Z
 ---
-# Liquibase contract (DROP) ni expand bilan bir relizda yuborish: vaqt darvozasi
+# Liquibase contract (DROP) ni expand bilan bir relizda yuborish: belgi va ma'lumot darvozasi
 
 - Ustun yoki jadval DROP i eski pod uni o'qiyotgan relizda yurmasligi kerak. Uni keyingi relizga qoldirish o'rniga shu relizda **darvoza** bilan yuborsa bo'ladi: har DROP changesetiga `preConditions` + `onFail: CONTINUE`.
-  - Vaqt sharti: expand relizining shartsiz yuradigan birinchi changeseti `databasechangelog` da `dateexecuted <= now() - interval 'N days'` (expectedResult 1).
+  - Belgi sharti (afzal): expand relizining belgi changeseti BOSHQA deployda yozilgan: `SELECT count(*) FROM <sxema>.databasechangelog m WHERE m.id = '<belgi>' AND m.deployment_id <> (SELECT d.deployment_id FROM <sxema>.databasechangelog d ORDER BY d.orderexecuted DESC LIMIT 1)` (expectedResult 1). Vaqt kutilmaydi, DROP keyingi deployda yuradi. Chekka holat: shu deployda boshqa hech narsa yurmasa DROP yana bir deployga suriladi.
+  - Vaqt sharti (eski): `dateexecuted <= now() - interval 'N days'`. `dateexecuted` JVM soati bilan zonasiz yoziladi, `now()` sessiya zonasida: farq soatlab siljiydi; belgi shartini afzal ko'ring.
+  - Belgi deferred trekda bo'lsa (masalan jadval almashtirish), shart o'sha trekning changelog jadvalini o'qiydi.
   - Ma'lumot sharti: tashlanadigan ustun bo'sh yoki nusxasi boshqa joyda to'liq.
   - `CONTINUE` changesetni yozmaydi va keyingi deployda qayta tekshiradi. `MARK_RAN` uni abadiy o'tkazib yuboradi, `HALT` deployni to'xtatadi.
 - Ikkinchi bosqich DROP ni birinchi contract markeriga bog'lang (zanjir: N, N+X, N+2X).

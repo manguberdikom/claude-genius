@@ -24,7 +24,7 @@ Barcha proyektlarga. Bir yozuv bir qator, nom mavzuni aytadi.
 - `feedback_lazy-oqim-mock-bilan-yashil.md` - lazy oqim yopiladi, mock yashiradi
 - `feedback_pgbouncer-bad-packet-header.md` - hex sarlavha, max_packet_size
 - `feedback_outbox-payload-nusxa.md` - payload da faqat id, consumer bormi
-- `feedback_liquibase-darvozali-contract.md` - DROP ni vaqt va ma'lumot darvozasi bilan
+- `feedback_liquibase-darvozali-contract.md` - DROP ni belgi `deployment_id` va ma'lumot darvozasi bilan
 - `feedback_allowlist-eskirgan-qator-javap.md` - olingan maydon allowlistni eskirtadi
 - `feedback_parallel-it-fake-thread-safe.md` - parallel IT fake poygasi
 - `feedback_sonar-lokal-hotspot-qator-siljishi.md` - lokal hotspot qatori surildi
@@ -33,3 +33,5 @@ Barcha proyektlarga. Bir yozuv bir qator, nom mavzuni aytadi.
 - `feedback_sonar-tavsiya-semantika.md` - Sonar tavsiyasi xulqni o'zgartiradi
 - `feedback_profil-ajratish-tuzoqlari.md` - base nomi, origin lookup, oddiy jar exclude
 - `feedback_worktree-stash-umumiy.md` - stash worktree lar orasida umumiy
+- `feedback_guruh-commitsiz-birlashtirish.md` - commitsiz daraxtga patch va merge-file
+- `feedback_liquibase-runalways-pending.md` - runAlways har yurishda pending

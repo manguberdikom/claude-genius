@@ -34,3 +34,5 @@ Tuzoqlar:
 - `CONCURRENTLY` uzilsa `indisvalid = false` indeks qoladi: `DROP INDEX CONCURRENTLY`, qayta (architect 33.8)
 - `ADD COLUMN ... NOT NULL` qiymatsiz yiqiladi: konstant `DEFAULT` yoki nullable, backfill, `CHECK ... NOT VALID`, `VALIDATE`, `SET NOT NULL` (code-review 25.1, architect 33.6, 33.7)
 - Butun jadval `UPDATE` migratsiya ichida: ulkan tranzaksiya, WAL, replika lag; bo'lakli idempotent job (code-review 25.4, architect 33.9)
+- Migratsiya faqat statement timeout li pooler orqali yursa (to'g'ridan ulanish yo'q), katta jadvalni ko'chirishda oy yoki sana bo'lagi timeout dan oshadi va changeSet har yurishda qayta yiqiladi. Yo'l: id kursori bo'yicha `LIMIT` li paketlar (`WHERE id > (SELECT max(id) FROM yangi) ORDER BY id LIMIT N`), bir nechta bir xil `runAlways` changeSet; almashtirish qulfi ostida faqat oxirgi o'tishdan keyingi qatorlar (architect 26.5)
+- Liquibase `listUnrunChangeSets` `runAlways` changeSet ni har yurishda yurmagan deb qaytaradi: pending metrikasi va "pending bo'sh" IT si `isAlwaysRun()` ni chiqarib tashlashi kerak, aks holda ish tugagach ham har yurishda ogohlantirish chiqadi

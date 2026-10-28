@@ -3,6 +3,19 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.5.5 (2026-10-28)
+
+- Parallel guruh kartasiga `scratch:` qatori majburiy (`parallel.md`).
+- `review` agenti hisobotni faqat javobda qaytaradi, faylni asosiy sessiya
+  yozadi (agentda Write yo'q).
+- Diffsiz review: "o'lik" topilma dalili (`null_frac`, kichik jadvalda
+  `idx_scan`, endpoint iste'molchi kodi bilan).
+- `rejalashtiruvchi` qo'llanma havolasini `doc.sh show` bilan tekshiradi.
+- `sxema-migratsiyasi` retsepti: pooler timeout ostida id paketli ko'chirish
+  va `runAlways` pending tuzog'i.
+- Umumiy memory: commitsiz daraxtga guruhni birlashtirish, `runAlways`
+  pending, contract darvozasi `deployment_id` bilan.
+
 ## 0.5.4 (2026-10-28)
 
 - `check_code` "Ortiqchalik va pattern darvozasi" qoidalarini mexanik
