@@ -3,6 +3,15 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.5.7 (2026-10-29)
+
+- Kontekst hooki 400K o'rniga 200K da yangi sessiyani tavsiya qiladi:
+  asosiy sessiya sarfining 61% i cache read edi.
+- Oxirgi javobdan 1 soat o'tgan katta sessiyada hook kesh o'chganini va
+  yangi sessiya arzonroq ekanini aytadi.
+- Asosiy sessiya sonnet da bo'lsa Tez yo'l faqat `tez_yol: ha` va diff 40
+  qatorgacha.
+
 ## 0.5.6 (2026-10-28)
 
 - Umumiy memory: servisda `EntityManager.flush()` istisnosi tarjima

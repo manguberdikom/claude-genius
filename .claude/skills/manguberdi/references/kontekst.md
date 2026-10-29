@@ -56,8 +56,11 @@ O'lchov transkriptdagi haqiqiy raqamdan olinadi. Oyna hajmi
 (haiku 200K, qolgani 1M), auto siqish bo'lgan bo'lsa o'sha nuqtadan
 olinadi. `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` berilgan bo'lsa oyna shu
 foizga tushiriladi, chunki siqish o'sha yerda bo'ladi. Siqish bo'lgan,
-kontekst chegaraning 75% idan yoki 400K tokendan (`CONTEXT_WARN`) oshgan
-bo'lsa yangi sessiya tavsiya qilinadi.
+kontekst chegaraning 75% idan yoki 200K tokendan (`CONTEXT_WARN`) oshgan
+bo'lsa yangi sessiya tavsiya qilinadi. Oxirgi javobdan 1 soat o'tgan va
+kontekst shu chegaradan katta bo'lsa hook kesh o'chganini aytadi: o'sha
+navbat butun kontekstni qaytadan yozadi, yangi ishni yangi sessiyada
+boshlash arzonroq.
 
 Skill yangi sessiya ocha olmaydi, lekin `--prompt` tayyor topshiriq
 beradi. Fakt qismini mashina to'ldiradi: branch, oxirgi commitlar,

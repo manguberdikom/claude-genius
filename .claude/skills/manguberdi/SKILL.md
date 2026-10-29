@@ -181,6 +181,10 @@ ham kiradi) `tez_yol: yo'q` desa, diff 40 qatordan katta yoki bug
 tuzatish bo'lsa (code-review 2.13) `review` chaqiriladi. `yo'q` bo'lsa zanjir `rejalashtiruvchi`
 (`reja: ijro`) -> `dasturchi` (kartada `reja:` bloki bilan) -> `review`.
 
+Asosiy sessiya sonnet da bo'lsa Tez yo'l faqat `tez_yol: ha` va diff 40
+qatorgacha bo'lganda; qolgani yuqoridagi zanjirga. Sabab: rejasiz sonnet
+yozuvi o'lchovda minimal 7.5, takror 2 (`references/yakun.md`).
+
 ## Model tanlash
 
 `rejalashtiruvchi` opus (vazifaga bir marta), `dasturchi`,

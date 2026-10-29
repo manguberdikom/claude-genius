@@ -36,6 +36,7 @@ holat papkasining `handoff/` iga, git siz; bulut sessiyasida
 olinadi. Proyekt memorysi joyi docref.memory_dir da (R0.5).
 """
 
+import datetime
 import glob
 import json
 import os
@@ -57,8 +58,13 @@ CRITICAL_RATIO = 0.9
 
 # Shu hajmdan keyin har navbat shuncha tokenni keshdan qayta o'qiydi:
 # oyna to'lmagan bo'lsa ham ish tugagan joyda yangi sessiya arzonroq.
-# CONTEXT_WARN bilan o'zgartiriladi.
-ECONOMY_TOKENS = 400000
+# 2026-10-29 o'lchovi: asosiy sessiya sarfining 61% i cache read, o'rtacha
+# kontekst 300-480K edi, 400K da aytish kech. CONTEXT_WARN bilan o'zgartiriladi.
+ECONOMY_TOKENS = 200000
+
+# Kesh shuncha soniyadan keyin o'chadi: keyingi navbat butun kontekstni
+# qaytadan yozadi. Shu payt katta sessiyani uzatishga eng arzon nuqta.
+CACHE_TTL = 3600
 
 # Model oynasi. Haiku 200K, qolganlari 1M.
 SMALL_WINDOW = 200000
@@ -631,8 +637,17 @@ def prompt(override, vazifa=None):
     return 0
 
 
+def row_time(row):
+    """Transkript qatorining vaqti (epoch soniya), o'qilmasa 0."""
+    try:
+        stamp = row["timestamp"].replace("Z", "+00:00")
+        return datetime.datetime.fromisoformat(stamp).timestamp()
+    except (KeyError, AttributeError, TypeError, ValueError):
+        return 0
+
+
 def tail_facts(path, nbytes=524288):
-    """Oxirgi javobning (kontekst, model). Transkript o'nlab MB bo'ladi,
+    """Oxirgi javobning (kontekst, model, vaqt). Transkript o'nlab MB bo'ladi,
     hook esa har so'rovda ishlaydi, shuning uchun faqat fayl oxiri o'qiladi.
     """
     with open(path, "rb") as handle:
@@ -641,13 +656,14 @@ def tail_facts(path, nbytes=524288):
         data = handle.read()
     for line in reversed(data.decode("utf-8", "replace").splitlines()):
         try:
-            message = main_message(json.loads(line))
+            row = json.loads(line)
         except ValueError:
             continue
+        message = main_message(row)
         size = context_size(message["usage"]) if message else 0
         if size:
-            return size, message.get("model") or ""
-    return 0, ""
+            return size, message.get("model") or "", row_time(row)
+    return 0, "", 0
 
 
 def load_state():
@@ -703,8 +719,20 @@ def _hook():
     path = payload.get("transcript_path") or transcript()
     if not path or not os.path.isfile(path):
         return 0
-    current, model = tail_facts(path)
+    current, model, last = tail_facts(path)
     if not current:
+        return 0
+    idle = time.time() - last if last else 0
+    if idle >= CACHE_TTL and current >= economy_tokens():
+        # Holatsiz: shu navbatdan keyin kesh yana issiq, takror aytilmaydi.
+        print(json.dumps({"hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": (
+                "Oxirgi javobdan %d daqiqa o'tdi, kesh o'chgan: shu navbat "
+                "%dK kontekstni qaytadan yozadi. Foydalanuvchiga bir qatorda "
+                "ayting: yangi ish bo'lsa %s --prompt bilan yangi sessiya "
+                "arzonroq." % (idle // 60, current // 1000, own_cmd()))}},
+            ensure_ascii=False))
         return 0
     limit, _ = limit_for(0, model, 0)
     if current >= CRITICAL_RATIO * limit:

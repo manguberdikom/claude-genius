@@ -369,6 +369,29 @@ def case_hook(tmp):
             and {code_a, code_b, code_c, code_d, code_e} == {0})
 
 
+
+def case_hook_kesh_ochgan(tmp):
+    """1 soatdan keyin katta sessiya: kesh o'chgani aytiladi, holat yozilmaydi;
+    kichik sessiya jim, yangi vaqtli katta sessiya oddiy pog'ona."""
+    def stamped(name, total, seconds_ago):
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                              time.gmtime(time.time() - seconds_ago))
+        path = os.path.join(tmp, "hook_idle", name + ".jsonl")
+        write_transcript(path, [usage_row(total, extra={"timestamp": stamp},
+                                          model="claude-opus-5-5")])
+        return path
+    state = os.path.join(tmp, "holat_idle")
+    _, idle = run_hook(tmp, {"transcript_path": stamped("eski", 250000, 7200),
+                             "session_id": "i1"}, GENIUS_STATE_DIR=state)
+    _, small = run_hook(tmp, {"transcript_path": stamped("kichik", 120000, 7200),
+                              "session_id": "i2"}, GENIUS_STATE_DIR=state)
+    _, fresh = run_hook(tmp, {"transcript_path": stamped("yangi", 250000, 60),
+                              "session_id": "i3"}, GENIUS_STATE_DIR=state)
+    saved = json.load(io.open(os.path.join(state, "handoff.json"), encoding="utf-8"))
+    return ("kesh o'chgan" in idle and "120 daqiqa" in idle and small == ""
+            and "/ 1000K" in fresh and "kesh" not in fresh
+            and set(saved) == {"i3"})
+
 def case_pct_override(tmp):
     """PL-CC8: oyna shu foizda siqiladi; sukutdan kattasi e'tiborsiz,
     o'lchangan siqish nuqtasi va CONTEXT_LIMIT ga qo'llanmaydi."""
@@ -636,6 +659,7 @@ CASES = [
     ("transkriptsiz tavsiya berilmaydi",
      case_hisobot_transkriptsiz_tavsiya_bermaydi),
     ("hook: chegara, takror va buzuq kirish", case_hook),
+    ("hook: kesh o'chgan katta sessiya", case_hook_kesh_ochgan),
     ("CLAUDE_AUTOCOMPACT_PCT_OVERRIDE chegarani tushiradi", case_pct_override),
     ("PCT=80: 2-pog'ona 720K da", case_pct_hook_ikkinchi_pogona),
     ("holat GENIUS_STATE_DIR da, tmp nomida pid", case_holat_genius_state_dir),
